@@ -1,0 +1,13 @@
+{
+    "running": [
+        {
+            "model": "qwen3.8-flash-next",
+            "state": "ready",
+            "cmd": "/home/dustintrap/ai-stack/bin/run-qwen38.sh 10001",
+            "proxy": "http://127.0.0.1:10001",
+            "ttl": 0,
+            "name": "Qwen3.8-Flash-Next",
+            "description": "125B main + 51B n-gram, 6B active, on vLLM. Coding agents."
+        }
+    ]
+}

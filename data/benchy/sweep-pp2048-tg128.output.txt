@@ -1,0 +1,165 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+llama-benchy (0.4.0)
+Date: 2026-09-19 22:18:12
+Benchmarking model: qwen3.8-flash-next at http://10.0.1.227:9292/v1
+Concurrency levels: [1, 2, 4, 8, 16, 32]
+Downloading book from https://www.gutenberg.org/files/1661/1661-0.txt...
+Saved text to cache: /Users/dustintrap/.cache/llama-benchy/cc6a0b5782734ee3b9069aa3b64cc62c.txt
+Total tokens available in text corpus: 144494
+Warming up...
+Warmup (User only) complete. Delta: 51 tokens (Server: 72, Local: 21)
+Warmup (System+Probe) complete. Delta: 52 tokens (Server: 74, Local context: 21, Probe: 1)
+
+Running coherence test...
+Coherence test PASSED.
+Measuring latency using mode: generation...
+Average latency (generation): 176.96 ms
+Running test: pp=2048, tg=128, depth=0, concurrency=1
+  Warmup (batch size 1)...
+  Run 1/3 (batch size 1)...
+  Run 2/3 (batch size 1)...
+  Run 3/3 (batch size 1)...
+Running test: pp=2048, tg=128, depth=0, concurrency=2
+  Warmup (batch size 2)...
+  Run 1/3 (batch size 2)...
+  Run 2/3 (batch size 2)...
+  Run 3/3 (batch size 2)...
+Running test: pp=2048, tg=128, depth=0, concurrency=4
+  Warmup (batch size 4)...
+  Run 1/3 (batch size 4)...
+  Run 2/3 (batch size 4)...
+  Run 3/3 (batch size 4)...
+Running test: pp=2048, tg=128, depth=0, concurrency=8
+  Warmup (batch size 8)...
+  Run 1/3 (batch size 8)...
+  Run 2/3 (batch size 8)...
+  Run 3/3 (batch size 8)...
+Running test: pp=2048, tg=128, depth=0, concurrency=16
+  Warmup (batch size 16)...
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+  Run 1/3 (batch size 16)...
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+  Run 2/3 (batch size 16)...
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+  Run 3/3 (batch size 16)...
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+Running test: pp=2048, tg=128, depth=0, concurrency=32
+  Warmup (batch size 32)...
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+  Run 1/3 (batch size 32)...
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+  Run 2/3 (batch size 32)...
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+  Run 3/3 (batch size 32)...
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+HTTP 429: {"src":"llama-swap","error":{"message":"Too many requests","type":"rate_limit_error","param":null,"code":"concurrency_limit"}}
+Saving results to /Users/dustintrap/Claude/dgx-spark/data/benchy/sweep-pp2048-tg128.json in JSON format...
+
+
+
+llama-benchy (0.4.0)
+date: 2026-09-19 22:18:12 | latency mode: generation
+exit=0

@@ -1,0 +1,30 @@
+{
+    "object": "list",
+    "data": [
+        {
+            "id": "qwen3.8-flash-next",
+            "object": "model",
+            "created": 1789870664,
+            "owned_by": "vllm",
+            "root": "/hf/hub/models--nvidia--Qwen3.8-Flash-Next-NVFP4/snapshots/fc694b54fb0174e0913e6adf86691ef85a4ead47-fp8hybrid",
+            "parent": null,
+            "max_model_len": 500000,
+            "permission": [
+                {
+                    "id": "modelperm-aeda2ccd00fe1657",
+                    "object": "model_permission",
+                    "created": 1789870664,
+                    "allow_create_engine": false,
+                    "allow_sampling": true,
+                    "allow_logprobs": true,
+                    "allow_search_indices": false,
+                    "allow_view": true,
+                    "allow_fine_tuning": false,
+                    "organization": "*",
+                    "group": null,
+                    "is_blocking": false
+                }
+            ]
+        }
+    ]
+}

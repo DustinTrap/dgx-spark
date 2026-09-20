@@ -1,0 +1,21 @@
+{
+    "data": [
+        {
+            "id": "qwen3.8-flash-next",
+            "object": "model",
+            "created": 1789870664,
+            "owned_by": "llama-swap",
+            "name": "Qwen3.8-Flash-Next",
+            "description": "125B main + 51B n-gram, 6B active, on vLLM. Coding agents.",
+            "meta": {
+                "llamaswap": {
+                    "type": "model"
+                }
+            },
+            "status": {
+                "value": "loaded"
+            }
+        }
+    ],
+    "object": "list"
+}
