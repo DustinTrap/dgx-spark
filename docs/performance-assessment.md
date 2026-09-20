@@ -11,6 +11,8 @@ Raw data: [`data/endpoint/`](../data/endpoint) (config and metrics snapshots), [
 - **Two limits disagree.** llama-swap admits 10; vLLM runs only 8 at once (inferred from queueing, see below). Requests 9 and 10 are accepted and then wait silently — up to 39 s to first token.
 - **Prefill is the bottleneck for this box.** Time to first token grows linearly with the total prompt tokens in flight: 8 cold 2k prompts means ~10.5 s each. The prefix cache (85% lifetime hit rate) is what makes agent workloads usable.
 - **Speed holds at depth.** Out to 133k tokens of context, single-stream prefill stays at ~1,850–2,000 tok/s and decode at ~27–32 tok/s. A cold 133k prompt takes 72 s to first token — long, but linear, with no cliff.
+- **But a long prefill starves everyone else's decode.** While one request prefills a long prompt, a request that is already generating drops from ~30 tok/s to **1–6 tok/s** until that prefill ends — over a minute for a 131k prompt. For several agents sharing the box this matters more than any throughput figure above.
+- **Real KV capacity is about half the headline.** Two 133k requests filled 69.5% of the KV cache; usage ran ~2x the simple token count at every step. Plan for roughly 380k tokens of context in flight, not 721k.
 - No preemptions and no errors other than the 429s.
 
 ## Endpoint configuration (as observed)
@@ -77,6 +79,28 @@ Cold cache (0 prefix-cache hits on 721,283 prompt tokens), concurrency 1, no err
 
 Decode at 131k averages ~10% below the shallower depths, but with three runs and a run-to-run spread of ±3 tok/s that difference is within noise; treat decode as flat to ~130k, not as a measured 10% loss. Speculative-decoding acceptance over this run was 56.3%, the same as at depth 0, so long context does not hurt drafting either.
 
+### Sweep 4 — context depth x concurrency
+
+Run with [`scripts/depth-concurrency.sh`](../scripts/depth-concurrency.sh), in steps, cold cache, 3 runs each. No errors, 0 preemptions. KV usage was sampled every 5 s during each step ([`depthconc-kv-samples.csv`](../data/benchy/depthconc-kv-samples.csv)).
+
+| Step | Tokens in flight | Prefill tok/s (aggregate) | TTFT by finishing order | Decode tok/s, by same order | Peak KV usage |
+|---|---:|---:|---|---|---:|
+| 1 x 32k (sweep 3) | 35k | 1,987 | 17.9 s | 31.7 | — |
+| 2 x 32k | 70k | 1,658 | 26 s, 42 s | **6.0**, 25 | 20.6% |
+| 4 x 32k | 139k | 1,512 | 26 s, 53 s, 77 s, 92 s | **1.8, 2.8, 5.9**, 19 | 42.7% |
+| 1 x 131k (sweep 3) | 133k | 1,844 | 72 s | 27.4 | — |
+| 2 x 131k | 266k | 1,463 | 85 s, 181 s | **1.3**, 23 | 69.5% |
+
+Per-request values were consistent across all three runs of every step (for example 2 x 131k decode: 1.3, 1.2, 1.3 tok/s for the first finisher; 22.1, 23.7, 23.8 for the second).
+
+**Decode starvation.** Prefills are largely serialised, so the first request reaches its first token well before the others — and then has to generate while the others are still prefilling. During that window it gets 1.3–6 tok/s. Only the last request to finish prefill decodes at normal speed. In the 2 x 131k case, the first request's 128 output tokens took ~100 s. benchy's own "total decode throughput" for these steps (2.4–11.9 tok/s) averages over that stall and is not a useful capacity number; the per-request figures above are.
+
+The same effect is present, less visibly, in sweep 1: it is why "decode total" there plateaus at ~70 tok/s while sweep 2 reaches 104.
+
+**KV usage.** Peak usage was 1.9–2.2x what tokens-in-flight / 721,212 predicts (70k → 20.6%, 139k → 42.7%, 266k → 69.5%). The cause was not determined — candidates are per-request state for the Mamba layers, block alignment (`mamba_cache_mode=align`), or blocks held by the previous run — but the ratio was stable, so the practical budget is ~380k tokens of concurrent context. A third 131k request would not have fit alongside the two here.
+
+**Monitoring under load.** Two of the script's `/metrics` reads timed out at 10 s during heavy prefill (those samples are blank in the CSV). The API server itself becomes slow to answer while a long prefill is running; health checks with short timeouts could misfire.
+
 ### The 8-slot queue
 
 At concurrency 10, per-request TTFT in every run splits 8 / 2:
@@ -107,7 +131,7 @@ Lifetime acceptance on real traffic before the benchmark was higher: 64.6% (posi
 
 **Context depth.** Neither phase degrades meaningfully with depth (see sweep 3), which is what a mostly-Mamba hybrid should do and what a pure-attention model would not. Cold time to first token is therefore simply `prompt tokens / ~1,900`. An earlier version of this document extrapolated these figures and warned they would probably be worse; measured, they are not.
 
-**Memory.** No KV pressure at these sizes (0 preemptions). The 721k-token KV pool against a 500k `max_model_len` means two long-context requests cannot coexist; with 8 slots the average budget is ~90k tokens per request.
+**Memory.** No KV pressure at these sizes (0 preemptions). The 721k-token KV pool against a 500k `max_model_len` means two long-context requests cannot coexist; with 8 slots the average budget is ~90k tokens per request. Sweep 4 shows measured usage runs ~2x the token count, so halve those figures in practice: ~380k tokens in flight, ~47k per request across 8 slots.
 
 ## Recommendations
 
@@ -118,7 +142,8 @@ Lifetime acceptance on real traffic before the benchmark was higher: 64.6% (posi
 
 ### Use
 
-3. **Pick concurrency by workload.** Interactive coding agent: 1–2 streams (26–32 tok/s each). Several agents sharing the box: up to 4 (18–20 tok/s each, 70 tok/s total). Batch or offline jobs: 8 (104 tok/s total). Do not run more than 8 clients.
+3. **Treat big cold prompts as disruptive.** One agent sending a 100k+ uncached prompt stalls every other stream to 1–6 tok/s for a minute or more. Until the scheduler is tuned (item 9), avoid mixing long-context cold starts with interactive sessions, and keep long sessions cache-warm so they rarely pay a full prefill.
+3a. **Pick concurrency by workload.** Interactive coding agent: 1–2 streams (26–32 tok/s each). Several agents sharing the box: up to 4 (18–20 tok/s each, 70 tok/s total). Batch or offline jobs: 8 (104 tok/s total). Do not run more than 8 clients.
 4. **Protect the prefix cache.** It is doing most of the work for agent traffic (85% hits). Keep system prompt and tool definitions byte-stable and first, put volatile content (timestamps, per-turn state) at the end, and avoid rotating many distinct long contexts through the 721k-token pool.
 5. **Budget reasoning tokens.** Reasoning is on by default and costs ~30 ms per token. For short, latency-sensitive calls, turn it off per request if the chat template supports it (Qwen convention: `chat_template_kwargs: {"enable_thinking": false}` — not verified against this model), and set `max_tokens` with reasoning in mind.
 6. **Set client timeouts for prefill, not decode.** Budget ~0.55 s per 1,000 uncached prompt tokens for a lone request (18 s at 35k, 72 s at 133k), and multiply by the number of requests prefilling at once.
@@ -127,12 +152,13 @@ Lifetime acceptance on real traffic before the benchmark was higher: 64.6% (posi
 
 7. **`CTX_LEN` 500k → what you actually use** (for example `CTX_LEN=262144`). This does not enlarge the KV pool, but it stops one request from being allowed to take 70% of it, and it raises vLLM's guaranteed concurrency figure. The 500k window relies on `YARN=1`; static YaRN scaling can cost some short-context quality on Qwen models, so if nothing needs more than the native window it is worth checking whether the recipe can run without it. Not measured here.
 8. **KV capacity.** If long contexts start causing preemptions (`vllm:num_preemptions_total` > 0), the lever to test is `--kv-cache-dtype fp8` (roughly doubles KV tokens; check output quality and hybrid-model support). Do **not** raise `gpu_memory_utilization`: 0.85 and 0.875 have already failed on this box.
-9. **`--max-num-batched-tokens`.** Aggregate prefill drops from 1,740 to ~940 tok/s as concurrency rises. A larger per-step token budget may recover prefill throughput at the cost of decode latency for running requests; a smaller one does the reverse. Check the current value in the recipe's `serve.sh` and test one step either side.
+9. **`--max-num-batched-tokens` — the most valuable knob to test, given sweep 4.** Running requests decode at 1–6 tok/s while another request prefills a long prompt, which suggests each scheduler step is dominated by a large prefill chunk. A *smaller* per-step token budget should give running requests more decode steps per second, at some cost in prefill throughput and TTFT. For a box shared by several interactive agents that is probably the right trade; for a single user or batch work it is not. Check the current value in the recipe's `serve.sh` and test one step either side.
 10. **Speculative decoding: leave at 2 draft tokens.** Position-1 acceptance is already only 46–56%; a third position would likely land under 40% and would cost throughput at higher concurrency. Only worth testing if single-stream latency is the sole goal.
 
 ### Not yet measured
 
-- Depth beyond 131k (the window is 500k), and depth **combined with concurrency** — several long-context requests at once is where the 721k-token KV pool would first come under pressure. Approach that in steps; the launch script records an OOM kill on a long prefill at a higher memory setting.
+- Depth beyond 131k (the window is 500k), and what happens when the KV pool actually fills (3 x 131k would do it): whether vLLM queues, preempts, or the host runs out of memory. Not attempted — it is a production endpoint with a recorded OOM kill on a long prefill at a higher memory setting.
+- Why KV usage is ~2x the token count.
 - True concurrency above 10 (blocked by the limit).
 - Warm-cache TTFT (benchy `--enable-prefix-caching`), which reflects real agent turns better than the cold numbers here.
 - Whether page-cache pressure on the mmapped n-gram table affects decode speed over long uptimes or after other I/O-heavy work.

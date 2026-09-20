@@ -52,6 +52,7 @@ for step in "${STEPS[@]}"; do
     --format json --save-result "$OUT/$tag.json" > "$OUT/$tag.output.txt" 2>&1 || rc=$?
 
   kill $sampler 2>/dev/null || true
+  wait $sampler 2>/dev/null || true   # reap quietly; otherwise bash prints a 'Terminated' job notice
   echo "   exit=$rc preemptions during step: $(( $(metric num_preemptions_total | cut -d. -f1) - ${pre_before%.*} ))"
   [ $rc -eq 0 ] || { echo "$tag failed - stopping before the next step" >&2; exit $rc; }
 done
