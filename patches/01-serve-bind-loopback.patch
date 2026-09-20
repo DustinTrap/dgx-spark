@@ -1,0 +1,11 @@
+--- a/scripts/serve.sh	2026-09-19 20:06:03.939848509 -0400
++++ b/scripts/serve.sh	2026-09-19 20:14:57.666413278 -0400
+@@ -262,7 +262,7 @@
+ trap 'rc=$?; [ $rc -ne 0 ] && docker rm -f "$NAME" >/dev/null 2>&1; exit $rc' EXIT
+ # shellcheck disable=SC2086
+ docker run -d --name "$NAME" --restart unless-stopped \
+-  --gpus all --ipc=host --shm-size 16g -p "${PORT}:8000" \
++  --gpus all --ipc=host --shm-size 16g -p "127.0.0.1:${PORT}:8000" \
+   -v "$HF_CACHE:/hf" -e HF_HOME=/hf -e HF_HUB_OFFLINE=1 \
+   "${PROM_ARGS[@]}" \
+   "${CACHE_MNT[@]}" "${TEMPLATE_MNT[@]}" \

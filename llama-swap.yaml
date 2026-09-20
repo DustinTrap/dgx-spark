@@ -1,0 +1,39 @@
+# llama-swap: single OpenAI-compatible entry point for the DGX Spark.
+#
+# Staged config for the cutover to Qwen3.8-Flash-Next as the only served model.
+# Swap it in with:  cp llama-swap.qwen38.yaml llama-swap.yaml
+# (llama-swap watches the file and reloads within ~2s.)
+#
+# Why llama-swap is still here with one model: it owns the bearer token, the
+# 0.0.0.0:9292 surface every client and Open WebUI already points at, and the
+# process lifecycle. Dropping it would mean reconfiguring all of those.
+
+# Qwen3.8 loads ~75 GiB of weights on first boot: 8-13 minutes.
+healthCheckTimeout: 1800
+logLevel: info
+startPort: 10001
+
+# Bearer token required on all inference endpoints.
+apiKeys:
+  - "${env.LLM_API_KEY}"
+
+models:
+  "qwen3.8-flash-next":
+    name: "Qwen3.8-Flash-Next"
+    description: "125B main + 51B n-gram, 6B active, on vLLM. Coding agents."
+    cmd: /home/dustintrap/ai-stack/bin/run-qwen38.sh ${PORT}
+    cmdStop: docker stop qwen38-flash
+    proxy: "http://127.0.0.1:${PORT}"
+    checkEndpoint: /health
+    # Never unload on idle. The old 60s default was fine for a model that
+    # reloads in 42s; here it would throw away 13 minutes of loading every
+    # time you stepped away from the keyboard.
+    unloadTimeout: 0
+
+# No group: with one model there is nothing to swap between, and an exclusive
+# group would only add a way for it to get unloaded.
+
+hooks:
+  on_startup:
+    preload:
+      - "qwen3.8-flash-next"

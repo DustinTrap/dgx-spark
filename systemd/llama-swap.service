@@ -1,0 +1,16 @@
+[Unit]
+Description=llama-swap - OpenAI-compatible model router for DGX Spark
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=%h/ai-stack/secrets/api-key.env
+ExecStartPre=-/usr/bin/docker rm -f qwen38-flash
+ExecStart=%h/.local/bin/llama-swap -config %h/ai-stack/llama-swap.yaml -listen 0.0.0.0:9292 -watch-config
+ExecStopPost=-/usr/bin/docker rm -f qwen38-flash
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

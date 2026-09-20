@@ -1,0 +1,48 @@
+# llama-swap: single OpenAI-compatible entry point for the DGX Spark.
+# Both models live in one exclusive group, so exactly one is resident at a
+# time: asking for muse-glimmer unloads gpt-oss-120b and vice versa.
+
+# 120B weights take a while to page in on first load.
+healthCheckTimeout: 1800
+logLevel: info
+startPort: 10001
+
+# Bearer token required on all inference endpoints.
+apiKeys:
+  - "${env.LLM_API_KEY}"
+
+models:
+  "gpt-oss-120b":
+    name: "GPT-OSS 120B"
+    description: "openai/gpt-oss-120b on SGLang. Coding agents."
+    cmd: /home/dustintrap/ai-stack/bin/run-gpt-oss.sh ${PORT}
+    cmdStop: docker stop gpt-oss-120b
+    proxy: "http://127.0.0.1:${PORT}"
+    checkEndpoint: /health
+    unloadTimeout: 60
+
+  "muse-glimmer":
+    name: "Muse Glimmer 30B"
+    description: "Muse Glimmer 30B on llama.cpp. Writing assistant."
+    cmd: /home/dustintrap/ai-stack/bin/run-muse.sh ${PORT}
+    cmdStop: docker stop muse-glimmer
+    proxy: "http://127.0.0.1:${PORT}"
+    checkEndpoint: /health
+    unloadTimeout: 60
+
+routing:
+  router:
+    use: group
+    settings:
+      groups:
+        "spark":
+          swap: true       # one member at a time
+          exclusive: true  # loading a member unloads everything else
+          members:
+            - "gpt-oss-120b"
+            - "muse-glimmer"
+
+hooks:
+  on_startup:
+    preload:
+      - "gpt-oss-120b"
