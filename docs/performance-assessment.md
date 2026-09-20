@@ -10,6 +10,7 @@ Raw data: [`data/endpoint/`](../data/endpoint) (config and metrics snapshots), [
 - **Concurrency 16 and 32 could not be measured.** llama-swap rejects everything past 10 in-flight requests with HTTP 429, so those two sweep rows are really concurrency 10.
 - **Two limits disagree.** llama-swap admits 10; vLLM runs only 8 at once (inferred from queueing, see below). Requests 9 and 10 are accepted and then wait silently — up to 39 s to first token.
 - **Prefill is the bottleneck for this box.** Time to first token grows linearly with the total prompt tokens in flight: 8 cold 2k prompts means ~10.5 s each. The prefix cache (85% lifetime hit rate) is what makes agent workloads usable.
+- **Speed holds at depth.** Out to 133k tokens of context, single-stream prefill stays at ~1,850–2,000 tok/s and decode at ~27–32 tok/s. A cold 133k prompt takes 72 s to first token — long, but linear, with no cliff.
 - No preemptions and no errors other than the 429s.
 
 ## Endpoint configuration (as observed)
@@ -63,6 +64,19 @@ Run to separate decode scaling from prefill contention. Stays within the 10-requ
 | 8 | 103.8 ± 2.5 | 13.7 | 222 | 0.98 s | 1.03 s |
 | 10 | 87.9 ± 2.8 | 15.6 | 288 | 8.09 s | 38.99 s |
 
+### Sweep 3 — context depth, single stream: 2048 prompt / 128 output on top of N tokens of prior context
+
+Cold cache (0 prefix-cache hits on 721,283 prompt tokens), concurrency 1, no errors, 0 preemptions.
+
+| Depth | Total prompt | Prefill tok/s | Decode tok/s (3 runs) | Cold TTFT |
+|---:|---:|---:|---:|---:|
+| 0 | 2,048 | 1,670 | 28.9 (21.9, 32.9, 31.8) | 1.5 s |
+| 8,192 | 10,240 | 1,949 | 29.6 (29.5, 28.4, 30.9) | 5.5 s |
+| 32,768 | 34,816 | 1,987 | 31.7 (35.5, 30.4, 29.1) | 17.9 s |
+| 131,072 | 133,120 | 1,844 | 27.4 (27.5, 24.3, 30.3) | 72.4 s |
+
+Decode at 131k averages ~10% below the shallower depths, but with three runs and a run-to-run spread of ±3 tok/s that difference is within noise; treat decode as flat to ~130k, not as a measured 10% loss. Speculative-decoding acceptance over this run was 56.3%, the same as at depth 0, so long context does not hurt drafting either.
+
 ### The 8-slot queue
 
 At concurrency 10, per-request TTFT in every run splits 8 / 2:
@@ -89,14 +103,9 @@ Lifetime acceptance on real traffic before the benchmark was higher: 64.6% (posi
 
 **Decode.** 30–32 tok/s single-stream, scaling to ~104 tok/s across 8 streams. Scaling efficiency is 84% at 2, 59% at 4, 43% at 8. Peak one-second windows reached 222–288 tok/s, so the engine has some headroom beyond the averages, but 8 slots is where the measured curve ends.
 
-**Prefill.** ~1,740 tok/s alone, 1,250–1,500 tok/s aggregate with 2–8 requests, ~940 tok/s with 10 in flight. Prefill does not get faster with concurrency, so requests queue behind each other's prompts. Cold-prompt cost at the single-stream rate, extrapolated (long-context prefill was **not** measured and usually slows with depth):
+**Prefill.** ~1,740 tok/s alone, 1,250–1,500 tok/s aggregate with 2–8 requests, ~940 tok/s with 10 in flight. Prefill does not get faster with concurrency, so requests queue behind each other's prompts.
 
-| Cold prompt | Estimated TTFT |
-|---:|---:|
-| 8k | ~5 s |
-| 32k | ~18 s |
-| 128k | ~75 s or more |
-| 500k | ~5 min or more |
+**Context depth.** Neither phase degrades meaningfully with depth (see sweep 3), which is what a mostly-Mamba hybrid should do and what a pure-attention model would not. Cold time to first token is therefore simply `prompt tokens / ~1,900`. An earlier version of this document extrapolated these figures and warned they would probably be worse; measured, they are not.
 
 **Memory.** No KV pressure at these sizes (0 preemptions). The 721k-token KV pool against a 500k `max_model_len` means two long-context requests cannot coexist; with 8 slots the average budget is ~90k tokens per request.
 
@@ -112,7 +121,7 @@ Lifetime acceptance on real traffic before the benchmark was higher: 64.6% (posi
 3. **Pick concurrency by workload.** Interactive coding agent: 1–2 streams (26–32 tok/s each). Several agents sharing the box: up to 4 (18–20 tok/s each, 70 tok/s total). Batch or offline jobs: 8 (104 tok/s total). Do not run more than 8 clients.
 4. **Protect the prefix cache.** It is doing most of the work for agent traffic (85% hits). Keep system prompt and tool definitions byte-stable and first, put volatile content (timestamps, per-turn state) at the end, and avoid rotating many distinct long contexts through the 721k-token pool.
 5. **Budget reasoning tokens.** Reasoning is on by default and costs ~30 ms per token. For short, latency-sensitive calls, turn it off per request if the chat template supports it (Qwen convention: `chat_template_kwargs: {"enable_thinking": false}` — not verified against this model), and set `max_tokens` with reasoning in mind.
-6. **Set client timeouts for prefill, not decode.** A cold 32k prompt behind other traffic can take well over 20 s to produce a first token.
+6. **Set client timeouts for prefill, not decode.** Budget ~0.55 s per 1,000 uncached prompt tokens for a lone request (18 s at 35k, 72 s at 133k), and multiply by the number of requests prefilling at once.
 
 ### Tune (each needs an A/B run; none was tested here)
 
@@ -123,7 +132,7 @@ Lifetime acceptance on real traffic before the benchmark was higher: 64.6% (posi
 
 ### Not yet measured
 
-- Decode and prefill speed at context depth (`--depth 8192 32768 131072`). This matters most for coding agents and is the natural next run.
+- Depth beyond 131k (the window is 500k), and depth **combined with concurrency** — several long-context requests at once is where the 721k-token KV pool would first come under pressure. Approach that in steps; the launch script records an OOM kill on a long prefill at a higher memory setting.
 - True concurrency above 10 (blocked by the limit).
 - Warm-cache TTFT (benchy `--enable-prefix-caching`), which reflects real agent turns better than the cold numbers here.
 - Whether page-cache pressure on the mmapped n-gram table affects decode speed over long uptimes or after other I/O-heavy work.
@@ -141,6 +150,9 @@ uvx llama-benchy --base-url http://10.0.1.227:9292/v1 --api-key "$OPENAI_API_KEY
 
 uvx llama-benchy ... --pp 128 --tg 512 --concurrency 1 2 4 8 10 \
   --format json --save-result decode-pp128-tg512.json
+
+uvx llama-benchy ... --pp 2048 --tg 128 --depth 0 8192 32768 131072 --concurrency 1 \
+  --format json --save-result depth-c1-pp2048-tg128.json
 ```
 
 vLLM internals are reachable through llama-swap at `/upstream/qwen3.8-flash-next/{metrics,version,v1/models}`.
