@@ -23,7 +23,7 @@ STEPS=("$@")
 
 metric() {  # metric <name> -> value, from vLLM via llama-swap's upstream passthrough
   curl -sS -m 10 -H "Authorization: Bearer $OPENAI_API_KEY" "$HOST/upstream/$MODEL/metrics" \
-    | awk -v n="vllm:$1{" 'index($0, n) == 1 { print $NF; exit }'
+    | awk -v n="vllm:$1{" 'index($0, n) == 1 && !seen++ { print $NF }'   # no early exit: that would SIGPIPE curl and trip pipefail
 }
 
 SAMPLES="$OUT/depthconc-kv-samples.csv"
