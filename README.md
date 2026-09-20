@@ -157,19 +157,31 @@ First boot loads ~75 GiB and takes **8-13 minutes**. Watch with
 
 ## Measured performance
 
-On this box, `-fp8hybrid`, MTP=2, single stream:
+Benchmarked 2026-09-19 over the LAN with llama-benchy: `-fp8hybrid`, MTP=2, cold
+prefix cache. Full method, tables and raw data:
+**[docs/performance-assessment.md](docs/performance-assessment.md)**.
 
 | | |
 |---|---|
-| Decode, engine-side | 40-49 tok/s (`Avg generation throughput`) |
-| Decode, end-to-end | **~23 tok/s** over 3 runs — what a client actually feels |
-| Prefill | ~200 tok/s observed; upstream reports 2,500-2,800 warm |
+| Decode, single stream | **~30 tok/s** client-side (27-32 across runs), flat out to 131k context |
+| Decode, aggregate | 50 tok/s at 2 streams, 70 at 4, **104 at 8** (13.7 tok/s each) |
+| Prefill, cold | **~1,700-2,000 tok/s**, flat out to 133k. Upstream reports 2,500-2,800 warm |
+| Cold time to first token | ~0.55 s per 1,000 uncached tokens: 1.4 s at 2k, 18 s at 35k, 72 s at 133k |
+| Speculative decoding | 57% of drafts accepted on prose, 65% on real (coding) traffic; ~2.1-2.3 tokens per step |
+| Prefix cache | 85% lifetime hit rate |
+| Concurrency | 8 sequences run at once; llama-swap admits 10 by default (see [Known issues](#known-issues-and-tuning)) |
+| KV pool | 721,212 tokens nominal; **~380k usable in practice** - usage measured at ~2x the token count |
 | Model load | 13 min |
-| KV pool | 721,212 tokens, 1.44× concurrency at 500k context |
 
-The two decode numbers measure different things and both are reported honestly:
-engine-side counts tokens while actively generating, end-to-end includes prefill,
-scheduling and speculative-decode rejections. Quote the ~23.
+Three decode numbers exist for this box and they measure different things.
+vLLM's engine-side `Avg generation throughput` reads 40-49 tok/s. A client timing
+a whole short request - prefill, scheduling and all - sees ~23 tok/s, which was
+the figure quoted here before. Decode alone, measured client-side after the first
+token, is ~30 tok/s; that is the number to compare against other setups.
+
+An earlier note here put prefill at "~200 tok/s observed". How that was measured
+is not recorded - most likely short prompts, where fixed per-request overhead
+dominates. On 2k-133k prompts benchy measured 1,670-1,990 tok/s.
 
 ## Configuration decisions
 
@@ -209,6 +221,13 @@ OPENAI_API_KEY=$LLM_API_KEY
 All four endpoints are live: `/v1/models`, `/v1/chat/completions`,
 `/v1/completions`, `/v1/messages`.
 
+**Client settings that matter here:** run at most 8 requests at once (1-2 for an
+interactive agent, 4 shared, 8 for batch); set timeouts for prefill, not decode
+(~0.55 s per 1,000 uncached tokens, multiplied by however many requests are
+prefilling); and keep the system prompt and tool definitions byte-stable at the
+front of the prompt so the prefix cache keeps hitting. Reasoning is on by default
+and costs ~30 ms a token - use `reasoning_effort: "low"` for short calls.
+
 **`reasoning_effort: "high"` is the one to verify.** The checkpoint's chat
 template accepts only `xhigh`/`medium`/`low` and returns 400 on anything else —
 and `high` is exactly what Claude Code sends. Upstream's `EFFORT_ALIAS=1`
@@ -230,7 +249,14 @@ systemctl --user status llama-swap.service
 journalctl --user -u llama-swap.service -f
 docker logs -f qwen38-flash
 curl -s -H "Authorization: Bearer $LLM_API_KEY" http://127.0.0.1:9292/v1/models
+
+# vLLM's own metrics, through llama-swap (KV usage, preemptions, spec-decode acceptance)
+curl -s -H "Authorization: Bearer $LLM_API_KEY" \
+  http://127.0.0.1:9292/upstream/qwen3.8-flash-next/metrics | grep -E 'kv_cache_usage|preemptions_total|spec_decode'
 ```
+
+`/metrics` and `/v1/models` can take over 10 s to answer while a long prefill is
+running. Give health checks and monitors a generous timeout.
 
 **Rotating the key** costs ~13 minutes of downtime — restarting llama-swap fires
 `ExecStopPost`, which removes the container and forces a full reload. Open WebUI
@@ -239,11 +265,33 @@ will silently 401 otherwise.
 
 ## Known issues and tuning
 
+**A long prefill starves everyone else's decode.** While one request prefills a
+long prompt, requests that are already generating drop from ~30 tok/s to
+**1-6 tok/s** until it finishes - over a minute for a 131k prompt. Harmless with
+one user; with several agents sharing the box, one cold 100k prompt stalls all of
+them. The knob to test is `--max-num-batched-tokens` in the recipe's `serve.sh`
+(smaller = more decode steps between prefill chunks). Untested here.
+
+**Concurrency limits were mismatched.** vLLM runs 8 sequences at once (inferred
+from queueing: at 10 in flight, exactly 8 start within ~1 s and 2 wait 20-40 s
+for a slot) while llama-swap's default `concurrencyLimit` is 10, so requests 9
+and 10 were accepted and then stalled silently. `llama-swap.yaml` in this repo
+now sets `concurrencyLimit: 8` so the 9th request gets an immediate, retryable
+429. Confirm the real `--max-num-seqs` in `serve.sh` and keep the two equal.
+
+**KV usage runs ~2x the token count.** Two 133k-token requests filled 69.5% of
+the pool; the ratio held at every load level tested. Cause not determined
+(per-request DeltaNet state, block alignment, or blocks retained between runs).
+Plan on ~380k tokens of context in flight, not 721k.
+
 **Page cache starvation.** With `GPU_MEM=0.80` the box runs at ~114 GiB used and
 only ~3 GiB of page cache for a 47.7 GiB mmap'd table, so PLE gathers cost
 4.7-9.3 ms per op against a ~25 ms decode step. The KV pool holds 721k tokens for
 what is effectively a single user. Lowering `GPU_MEM` to ~0.72 and `CTX` to the
-native 262,144 would trade unused KV for page cache. Untested here.
+native 262,144 would trade unused KV for page cache. Untested here - and check
+it against the 2x KV finding above first: 0.72 would cut the 19.5 GiB KV pool
+roughly in half, and if usage really is ~2x the token count, the remainder could
+not hold even one full 262k-token request.
 
 **Swap sits at ~5.4 GiB** and is stable — sampled flat, not climbing. Distinct
 from the runaway pattern described below.
@@ -289,6 +337,10 @@ bin/privileged-setup.sh          linger, ufw rules, Docker bridge access
 bin/enable-firewall.sh           enables ufw without locking out SSH
 systemd/llama-swap.service       user unit
 patches/                         our two changes to the upstream recipe
+docs/performance-assessment.md   benchmark results, assessment, tuning and usage advice
+scripts/depth-concurrency.sh     stepped long-context x concurrency test
+data/endpoint/                   llama-swap and vLLM config/metrics snapshots
+data/benchy/                     raw llama-benchy output for every run
 examples/                        superseded gpt-oss + Muse llama.cpp config
 ```
 

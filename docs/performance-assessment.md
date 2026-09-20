@@ -8,7 +8,7 @@ Raw data: [`data/endpoint/`](../data/endpoint) (config and metrics snapshots), [
 - Single stream: **~1,740 tok/s prefill, ~30–32 tok/s decode**, 1.4 s to first token on a cold 2k prompt.
 - Aggregate decode scales **3.5x, to ~104 tok/s at 8 concurrent**, while per-request speed falls to ~14 tok/s.
 - **Concurrency 16 and 32 could not be measured.** llama-swap rejects everything past 10 in-flight requests with HTTP 429, so those two sweep rows are really concurrency 10.
-- **Two limits disagree.** llama-swap admits 10; vLLM runs only 8 at once (inferred from queueing, see below). Requests 9 and 10 are accepted and then wait silently — up to 39 s to first token.
+- **Two limits disagreed.** As measured, llama-swap admitted 10 while vLLM ran only 8 at once (inferred from queueing, see below), so requests 9 and 10 were accepted and then waited silently — up to 39 s to first token. `llama-swap.yaml` in this repo now sets `concurrencyLimit: 8`; every number here was taken before that change.
 - **Prefill is the bottleneck for this box.** Time to first token grows linearly with the total prompt tokens in flight: 8 cold 2k prompts means ~10.5 s each. The prefix cache (85% lifetime hit rate) is what makes agent workloads usable.
 - **Speed holds at depth.** Out to 133k tokens of context, single-stream prefill stays at ~1,850–2,000 tok/s and decode at ~27–32 tok/s. A cold 133k prompt takes 72 s to first token — long, but linear, with no cliff.
 - **But a long prefill starves everyone else's decode.** While one request prefills a long prompt, a request that is already generating drops from ~30 tok/s to **1–6 tok/s** until that prefill ends — over a minute for a 131k prompt. For several agents sharing the box this matters more than any throughput figure above.
@@ -23,9 +23,9 @@ Raw data: [`data/endpoint/`](../data/endpoint) (config and metrics snapshots), [
 | Host | DGX Spark, 121 GB unified memory. ~75 GiB of weights resident; the 48 GiB n-gram table is mmapped from NVMe (see [`bin/run-qwen38.sh`](../bin/run-qwen38.sh)) |
 | llama-swap concurrency limit | 10. Not set in [`llama-swap.yaml`](../llama-swap.yaml), so this is llama-swap's default. Observed: exactly `N − 10` requests rejected at N = 16 and 32 |
 | Backend | vLLM `0.1.dev20073+g8e685d198`, launched by `~/ai-stack/bin/run-qwen38.sh`, port 10001 |
-| Model | `nvidia/Qwen3.8-Flash-Next-NVFP4`, `fp8hybrid` snapshot; hybrid attention/Mamba MoE. llama-swap description: 125B main + 51B n-gram, 6B active |
-| `max_model_len` | 500,000 (`CTX_LEN` default in the launch script, with `YARN=1`) |
-| KV cache | 721,212 tokens → 1.44 full-length requests. `cache_dtype=auto`, block size 8, Mamba block size 16 |
+| Model | `nvidia/Qwen3.8-Flash-Next-NVFP4`, `fp8hybrid` snapshot; hybrid MoE, 3:1 Gated DeltaNet (linear attention) to sparse attention, 512 experts. 125B backbone + 51B n-gram table, 6B active |
+| `max_model_len` | 500,000 (`CTX_LEN` default in the launch script). Native window is 262,144; 500k comes from YaRN factor 4 |
+| KV cache | 19.5 GiB, 721,212 tokens → 1.44 full-length requests nominal (about half that in practice, see sweep 4). `cache_dtype=auto`, block size 8; vLLM reports the DeltaNet state under its `mamba_*` cache settings (block size 16, mode `align`) |
 | `gpu_memory_utilization` | 0.8 — deliberately: the launch script records that 0.85 drifted into swap and 0.875 was OOM-killed |
 | KV offload | backend `native`, no size set, 0 CPU blocks |
 | Prefix caching | on (sha256). Lifetime: 3.10M hits / 3.62M queried = 85% |
@@ -97,7 +97,7 @@ Per-request values were consistent across all three runs of every step (for exam
 
 The same effect is present, less visibly, in sweep 1: it is why "decode total" there plateaus at ~70 tok/s while sweep 2 reaches 104.
 
-**KV usage.** Peak usage was 1.9–2.2x what tokens-in-flight / 721,212 predicts (70k → 20.6%, 139k → 42.7%, 266k → 69.5%). The cause was not determined — candidates are per-request state for the Mamba layers, block alignment (`mamba_cache_mode=align`), or blocks held by the previous run — but the ratio was stable, so the practical budget is ~380k tokens of concurrent context. A third 131k request would not have fit alongside the two here.
+**KV usage.** Peak usage was 1.9–2.2x what tokens-in-flight / 721,212 predicts (70k → 20.6%, 139k → 42.7%, 266k → 69.5%). The cause was not determined — candidates are per-request state for the DeltaNet layers, block alignment (`mamba_cache_mode=align`), or blocks held by the previous run — but the ratio was stable, so the practical budget is ~380k tokens of concurrent context. A third 131k request would not have fit alongside the two here.
 
 **Monitoring under load.** Two of the script's `/metrics` reads timed out at 10 s during heavy prefill (those samples are blank in the CSV). The API server itself becomes slow to answer while a long prefill is running; health checks with short timeouts could misfire.
 
@@ -129,7 +129,7 @@ Lifetime acceptance on real traffic before the benchmark was higher: 64.6% (posi
 
 **Prefill.** ~1,740 tok/s alone, 1,250–1,500 tok/s aggregate with 2–8 requests, ~940 tok/s with 10 in flight. Prefill does not get faster with concurrency, so requests queue behind each other's prompts.
 
-**Context depth.** Neither phase degrades meaningfully with depth (see sweep 3), which is what a mostly-Mamba hybrid should do and what a pure-attention model would not. Cold time to first token is therefore simply `prompt tokens / ~1,900`. An earlier version of this document extrapolated these figures and warned they would probably be worse; measured, they are not.
+**Context depth.** Neither phase degrades meaningfully with depth (see sweep 3), which is what a hybrid that is three-quarters linear attention (Gated DeltaNet) should do and what a pure-attention model would not. Cold time to first token is therefore simply `prompt tokens / ~1,900`. An earlier version of this document extrapolated these figures and warned they would probably be worse; measured, they are not.
 
 **Memory.** No KV pressure at these sizes (0 preemptions). The 721k-token KV pool against a 500k `max_model_len` means two long-context requests cannot coexist; with 8 slots the average budget is ~90k tokens per request. Sweep 4 shows measured usage runs ~2x the token count, so halve those figures in practice: ~380k tokens in flight, ~47k per request across 8 slots.
 
@@ -137,23 +137,23 @@ Lifetime acceptance on real traffic before the benchmark was higher: 64.6% (posi
 
 ### Fix first
 
-1. **Make the two concurrency limits agree.** Add `concurrencyLimit: 8` under the `qwen3.8-flash-next` model in `llama-swap.yaml` so the 9th request gets an immediate 429 it can retry. (The alternative, raising vLLM's `--max-num-seqs` to 10+, means changing the recipe's launcher, which `run-qwen38.sh` deliberately does not reimplement.) Today requests 9–10 are accepted and then stall for 20–40 s, which looks like a hang to an agent client.
+1. **Make the two concurrency limits agree.** Done in this repo: `llama-swap.yaml` now sets `concurrencyLimit: 8`, so the 9th request gets an immediate 429 it can retry instead of stalling 20–40 s. It takes effect once that file is copied to the host. Confirm `--max-num-seqs` in the recipe's `serve.sh` and keep the two equal.
 2. **To get real 16/32 numbers**, raise both limits (for example `--max-num-seqs 32`, llama-swap limit 32) and re-run sweep 1. On this evidence expect little aggregate gain past 8 in prefill-heavy use, and per-request decode under 10 tok/s.
 
 ### Use
 
-3. **Treat big cold prompts as disruptive.** One agent sending a 100k+ uncached prompt stalls every other stream to 1–6 tok/s for a minute or more. Until the scheduler is tuned (item 9), avoid mixing long-context cold starts with interactive sessions, and keep long sessions cache-warm so they rarely pay a full prefill.
-3a. **Pick concurrency by workload.** Interactive coding agent: 1–2 streams (26–32 tok/s each). Several agents sharing the box: up to 4 (18–20 tok/s each, 70 tok/s total). Batch or offline jobs: 8 (104 tok/s total). Do not run more than 8 clients.
-4. **Protect the prefix cache.** It is doing most of the work for agent traffic (85% hits). Keep system prompt and tool definitions byte-stable and first, put volatile content (timestamps, per-turn state) at the end, and avoid rotating many distinct long contexts through the 721k-token pool.
-5. **Budget reasoning tokens.** Reasoning is on by default and costs ~30 ms per token. For short, latency-sensitive calls, turn it off per request if the chat template supports it (Qwen convention: `chat_template_kwargs: {"enable_thinking": false}` — not verified against this model), and set `max_tokens` with reasoning in mind.
-6. **Set client timeouts for prefill, not decode.** Budget ~0.55 s per 1,000 uncached prompt tokens for a lone request (18 s at 35k, 72 s at 133k), and multiply by the number of requests prefilling at once.
+3. **Treat big cold prompts as disruptive.** One agent sending a 100k+ uncached prompt stalls every other stream to 1–6 tok/s for a minute or more. Until the scheduler is tuned (item 10), avoid mixing long-context cold starts with interactive sessions, and keep long sessions cache-warm so they rarely pay a full prefill.
+4. **Pick concurrency by workload.** Interactive coding agent: 1–2 streams (26–32 tok/s each). Several agents sharing the box: up to 4 (18–20 tok/s each, 70 tok/s total). Batch or offline jobs: 8 (104 tok/s total). Do not run more than 8 clients.
+5. **Protect the prefix cache.** It is doing most of the work for agent traffic (85% hits). Keep system prompt and tool definitions byte-stable and first, put volatile content (timestamps, per-turn state) at the end, and avoid rotating many distinct long contexts through the KV pool (~380k tokens usable).
+6. **Budget reasoning tokens.** Reasoning is on by default and costs ~30 ms per token; a trivial prompt spent 79 of 144 output tokens on it. For short, latency-sensitive calls send `reasoning_effort: "low"` (the template accepts `low`/`medium`/`xhigh`, with `high`/`max`/`minimal` aliased — see the README), and set `max_tokens` with reasoning in mind.
+7. **Set client timeouts for prefill, not decode.** Budget ~0.55 s per 1,000 uncached prompt tokens for a lone request (18 s at 35k, 72 s at 133k), and multiply by the number of requests prefilling at once.
 
 ### Tune (each needs an A/B run; none was tested here)
 
-7. **`CTX_LEN` 500k → what you actually use** (for example `CTX_LEN=262144`). This does not enlarge the KV pool, but it stops one request from being allowed to take 70% of it, and it raises vLLM's guaranteed concurrency figure. The 500k window relies on `YARN=1`; static YaRN scaling can cost some short-context quality on Qwen models, so if nothing needs more than the native window it is worth checking whether the recipe can run without it. Not measured here.
-8. **KV capacity.** If long contexts start causing preemptions (`vllm:num_preemptions_total` > 0), the lever to test is `--kv-cache-dtype fp8` (roughly doubles KV tokens; check output quality and hybrid-model support). Do **not** raise `gpu_memory_utilization`: 0.85 and 0.875 have already failed on this box.
-9. **`--max-num-batched-tokens` — the most valuable knob to test, given sweep 4.** Running requests decode at 1–6 tok/s while another request prefills a long prompt, which suggests each scheduler step is dominated by a large prefill chunk. A *smaller* per-step token budget should give running requests more decode steps per second, at some cost in prefill throughput and TTFT. For a box shared by several interactive agents that is probably the right trade; for a single user or batch work it is not. Check the current value in the recipe's `serve.sh` and test one step either side.
-10. **Speculative decoding: leave at 2 draft tokens.** Position-1 acceptance is already only 46–56%; a third position would likely land under 40% and would cost throughput at higher concurrency. Only worth testing if single-stream latency is the sole goal.
+8. **`CTX_LEN` 500k → 262,144, the native window.** Nothing measured here needs more, and sweep 4 shows a single 500k request could not fit in the KV pool anyway (~380k usable). Dropping to native also removes YaRN (factor 4), whose static scaling can cost some short-context quality on Qwen models — not measured here. The README's related idea of also lowering `GPU_MEM` to ~0.72 for page cache needs care: it would roughly halve the KV pool, and at the measured ~2x usage the remainder may not hold one full 262k request. Resolve the 2x question first.
+9. **KV capacity.** If long contexts start causing preemptions (`vllm:num_preemptions_total` > 0), the lever to test is `--kv-cache-dtype fp8` (roughly doubles KV tokens; check output quality and hybrid-model support). Do **not** raise `gpu_memory_utilization`: 0.85 and 0.875 have already failed on this box.
+10. **`--max-num-batched-tokens` — the most valuable knob to test, given sweep 4.** Running requests decode at 1–6 tok/s while another request prefills a long prompt, which suggests each scheduler step is dominated by a large prefill chunk. A *smaller* per-step token budget should give running requests more decode steps per second, at some cost in prefill throughput and TTFT. For a box shared by several interactive agents that is probably the right trade; for a single user or batch work it is not. Check the current value in the recipe's `serve.sh` and test one step either side.
+11. **Speculative decoding: leave at 2 draft tokens.** Position-1 acceptance is already only 46–56%; a third position would likely land under 40% and would cost throughput at higher concurrency. Only worth testing if single-stream latency is the sole goal.
 
 ### Not yet measured
 
@@ -161,7 +161,7 @@ Lifetime acceptance on real traffic before the benchmark was higher: 64.6% (posi
 - Why KV usage is ~2x the token count.
 - True concurrency above 10 (blocked by the limit).
 - Warm-cache TTFT (benchy `--enable-prefix-caching`), which reflects real agent turns better than the cold numbers here.
-- Whether page-cache pressure on the mmapped n-gram table affects decode speed over long uptimes or after other I/O-heavy work.
+- The effect of page-cache pressure on the mmapped n-gram table. The README records only ~3 GiB of page cache for a 47.7 GiB table and 4.7–9.3 ms per lookup op; how much decode speed that costs, and whether it varies with uptime, was not measured.
 - Code-like text, to see the production speculative-decoding acceptance rate under benchmark conditions.
 
 ## Reproduce

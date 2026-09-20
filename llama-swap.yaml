@@ -29,6 +29,12 @@ models:
     # reloads in 42s; here it would throw away 13 minutes of loading every
     # time you stepped away from the keyboard.
     unloadTimeout: 0
+    # Match vLLM's 8 running sequences. llama-swap's default of 10 let requests
+    # 9 and 10 through to sit in vLLM's queue for 20-40s with no feedback; at 8
+    # the 9th gets an immediate 429 it can retry. The 8 is inferred from
+    # benchmark queueing (docs/performance-assessment.md), not read from
+    # serve.sh - if --max-num-seqs there differs, change this to match.
+    concurrencyLimit: 8
 
 # No group: with one model there is nothing to swap between, and an exclusive
 # group would only add a way for it to get unloaded.
