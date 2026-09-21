@@ -511,13 +511,34 @@ restart) and make it official — own variable, fresh standby — at the next on
 
 #### Open WebUI
 
-`bin/run-openwebui.sh` passes `LLM_KEY_WEBUI` into the container. After rotating
-it, re-run the script — and then **check it actually took**: Open WebUI stores
-connection settings in its own database and, by default
-(`ENABLE_PERSISTENT_CONFIG=True`), a value saved there wins over the environment
-variable on later boots. If the UI shows models failing with 401 after a
-rotation, update the key under Admin → Settings → Connections. Verify on the box;
-not tested from this repo.
+`bin/run-openwebui.sh` passes `LLM_KEY_WEBUI` into the container - but **the environment
+variable is not what the web UI uses after its first boot.** Verified on the box
+(Open WebUI 0.11.3, 2026-09-21): the connection key, the default model and the task model are
+all persisted in its own database (`config` table, keys `openai.api_keys`, `ui.default_models`,
+`task.model.external`), and a persisted value wins over the environment on every later boot -
+even an empty one. Re-launching with a new variable alone silently keeps the old key.
+
+So a key change is two steps: update the persisted value, then recreate the container.
+Either use Admin -> Settings -> Connections in the UI, or do it from the box without ever
+displaying the key (it is passed to the container by variable NAME):
+
+```bash
+set -a; . ~/ai-stack/secrets/api-key.env; set +a; export NEWKEY="$LLM_KEY_WEBUI"
+docker exec -e NEWKEY open-webui python3 -c '
+import os, json, sqlite3
+db = sqlite3.connect("/app/backend/data/webui.db", timeout=30)
+with db:
+    db.execute("update config set value=? where key=?", (json.dumps([os.environ["NEWKEY"]]), "openai.api_keys"))
+print("key rows updated:", db.total_changes)'
+bin/run-openwebui.sh          # recreate the container
+```
+
+Current persisted settings: default model `qwen3.8-flash-next-chat` (see Request profiles) and
+task model `qwen3.8-flash-next-assistant`, so background title / follow-up generation runs
+without hybrid thinking instead of spending reasoning tokens on a shared box. After any change,
+check from inside the container that the persisted key gets 200 on `/v1/models` and a wrong key
+gets 401. All six model ids are visible in the UI's picker; to restrict it to `-chat`, set a
+model allow-list on the connection under Admin -> Settings -> Connections.
 
 #### Getting to zero-reload key changes (not done)
 
