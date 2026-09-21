@@ -101,9 +101,12 @@ Starting from a clean Spark with Docker and the NVIDIA container runtime.
 **1. Host setup** — linger, firewall rules, Docker bridge access:
 
 ```bash
-sudo bin/privileged-setup.sh
-sudo bin/enable-firewall.sh      # adds the SSH rule BEFORE enabling ufw
+sudo bin/privileged-setup.sh <lan-cidr>
+sudo bin/enable-firewall.sh <lan-cidr>      # adds the SSH rule BEFORE enabling ufw
 ```
+
+`<lan-cidr>` is your local subnet. It is an argument, not a default, because this
+repo is public and never records a private-network address.
 
 `ufw status` reporting `active` from `systemctl` is **not** the same as ufw
 actually enforcing. Check `sudo ufw status verbose` and look for `Status: active`.
@@ -338,10 +341,32 @@ bin/enable-firewall.sh           enables ufw without locking out SSH
 systemd/llama-swap.service       user unit
 patches/                         our two changes to the upstream recipe
 docs/performance-assessment.md   benchmark results, assessment, tuning and usage advice
-scripts/depth-concurrency.sh     stepped long-context x concurrency test
+scripts/depth-concurrency.sh     stepped long-context x concurrency test (load test: announce it first)
+scripts/scrub-paths.sh           strips home paths and private addresses from benchmark logs
+AGENTS.md                        rules for working in this public repo
+.gitleaks.toml, .githooks/       secret + disclosure scanning (docs/secret-scanning.md)
 data/endpoint/                   llama-swap and vLLM config/metrics snapshots
 data/benchy/                     raw llama-benchy output for every run
 examples/                        superseded gpt-oss + Muse llama.cpp config
 ```
 
 Secrets live in `~/ai-stack/secrets/api-key.env` and are **not** in this repo.
+`secrets.env.example` lists every variable the stack reads.
+
+## Contributing / working in this repo
+
+**Read [AGENTS.md](AGENTS.md) first** — it applies to humans and AI agents alike.
+The short version: this repo is public (no token values, private-network
+addresses, home paths, or details of the applications that use the endpoint);
+the box is shared, so no restarts, load tests or config changes without an issue
+and an announced window; issue first; numbers cite the command that produced
+them; never `git add -A`.
+
+Secret scanning runs in CI on every push and PR, and as a local pre-commit hook:
+
+```bash
+git config core.hooksPath .githooks     # once per clone; needs gitleaks installed
+```
+
+Rules, manual scans and the benchmark-log scrubber:
+[docs/secret-scanning.md](docs/secret-scanning.md).

@@ -1,0 +1,68 @@
+# gitleaks configuration for a PUBLIC repository. See AGENTS.md and
+# docs/secret-scanning.md.
+#
+# Extends the built-in ruleset with two repo-specific rules: private-network
+# addresses (not secrets, but never to be published from here) and values
+# assigned to the token variables this stack uses.
+title = "dgx-spark guardrails"
+
+[extend]
+useDefault = true
+
+# --- (a) private-network IPv4 literals --------------------------------------
+# RFC 1918 only. Loopback (127.x), the wildcard bind address (0.0.0.0), link
+# local and public addresses do not match. Write <spark-ip> / <lan-cidr> instead.
+# The leading guard keeps longer dotted numbers (versions, 110.x, x.10.y.z.w)
+# from matching; Go's RE2 has no lookbehind, hence the capture group.
+[[rules]]
+id = "private-network-ipv4"
+description = "RFC 1918 private-network IPv4 literal - use the <spark-ip> / <lan-cidr> placeholders"
+regex = '''(?:^|[^0-9.])((?:10\.\d{1,3}|192\.168|172\.(?:1[6-9]|2\d|3[01]))\.\d{1,3}\.\d{1,3})(?:[^0-9]|$)'''
+secretGroup = 1
+tags = ["disclosure", "network"]
+
+# Commits made before this rule existed recorded the LAN address in benchmark
+# logs and setup scripts. They are already public; the tree was scrubbed in the
+# change that added this file. Exempting them FOR THIS RULE ONLY keeps a
+# full-history scan meaningful - every secret rule still scans these commits.
+# Removing the literals for real means rewriting history (operator's call).
+[[rules.allowlists]]
+description = "pre-guardrail commits: private-network literal already in public history"
+commits = [
+  "0f1b2cd1c806f40fd930cfacbe7ccb7e65c6af44",
+  "42d78eacff4f460dd2284cb7df568941e8d335ae",
+  "61ebb8cd146ae63510f47a364e6511b488537bd6",
+  "c1de783dc8b5de942e01cd301d5ea9a931e7767b",
+  "ee916eafa382601aefc164b58f3028901f9d5ba9",
+]
+
+# --- (b) values assigned to this stack's token variables ---------------------
+# Matches NAME=<literal> / NAME: <literal> with a literal of 16+ token-ish
+# characters. References ($LLM_API_KEY, ${LLM_API_KEY}, ${env.LLM_API_KEY}) and
+# the short placeholder in secrets.env.example do not match.
+[[rules]]
+id = "stack-token-assignment"
+description = "Literal value assigned to one of this stack's bearer-token variables"
+regex = '''(?i)\b(?:LLM_API_KEY|OPENAI_API_KEY|ANTHROPIC_AUTH_TOKEN|ANTHROPIC_API_KEY|HF_TOKEN)\b["']?\s*[:=]\s*["']?([A-Za-z0-9_\-+/.]{16,})'''
+secretGroup = 1
+keywords = ["llm_api_key", "openai_api_key", "anthropic_auth_token", "anthropic_api_key", "hf_token"]
+tags = ["secret", "bearer"]
+
+# The key format this stack generates: sk- followed by 48 alphanumerics
+# (secrets.env.example). Caught wherever it appears, with or without a variable.
+[[rules]]
+id = "stack-sk-token"
+description = "sk-prefixed bearer token in the format this stack generates"
+regex = '''\b(sk-[A-Za-z0-9]{32,})\b'''
+secretGroup = 1
+keywords = ["sk-"]
+tags = ["secret", "bearer"]
+
+# A literal token in an Authorization header (curl examples, captured logs).
+[[rules]]
+id = "bearer-header-literal"
+description = "Literal bearer token in an Authorization header"
+regex = '''(?i)\bbearer\s+([A-Za-z0-9_\-+/.=]{20,})'''
+secretGroup = 1
+keywords = ["bearer"]
+tags = ["secret", "bearer"]

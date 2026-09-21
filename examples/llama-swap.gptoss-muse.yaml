@@ -15,7 +15,7 @@ models:
   "gpt-oss-120b":
     name: "GPT-OSS 120B"
     description: "openai/gpt-oss-120b on SGLang. Coding agents."
-    cmd: /home/dustintrap/ai-stack/bin/run-gpt-oss.sh ${PORT}
+    cmd: ${env.HOME}/ai-stack/bin/run-gpt-oss.sh ${PORT}
     cmdStop: docker stop gpt-oss-120b
     proxy: "http://127.0.0.1:${PORT}"
     checkEndpoint: /health
@@ -24,7 +24,7 @@ models:
   "muse-glimmer":
     name: "Muse Glimmer 30B"
     description: "Muse Glimmer 30B on llama.cpp. Writing assistant."
-    cmd: /home/dustintrap/ai-stack/bin/run-muse.sh ${PORT}
+    cmd: ${env.HOME}/ai-stack/bin/run-muse.sh ${PORT}
     cmdStop: docker stop muse-glimmer
     proxy: "http://127.0.0.1:${PORT}"
     checkEndpoint: /health

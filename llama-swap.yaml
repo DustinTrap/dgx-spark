@@ -21,7 +21,9 @@ models:
   "qwen3.8-flash-next":
     name: "Qwen3.8-Flash-Next"
     description: "125B main + 51B n-gram, 6B active, on vLLM. Coding agents."
-    cmd: /home/dustintrap/ai-stack/bin/run-qwen38.sh ${PORT}
+    # ${env.HOME} is llama-swap's environment-variable macro (same mechanism as
+    # the apiKeys entry above); it keeps an absolute home path out of this file.
+    cmd: ${env.HOME}/ai-stack/bin/run-qwen38.sh ${PORT}
     cmdStop: docker stop qwen38-flash
     proxy: "http://127.0.0.1:${PORT}"
     checkEndpoint: /health

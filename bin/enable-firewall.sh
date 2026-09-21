@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 # Enable ufw safely: make sure SSH survives first, then turn it on.
 #
-#   sudo ~/ai-stack/bin/enable-firewall.sh
+#   sudo ~/ai-stack/bin/enable-firewall.sh <lan-cidr>
+#
+# <lan-cidr> is your local subnet in CIDR form. It is an argument (or LAN_CIDR)
+# rather than a default because this repository is public: no private-network
+# address is ever written into a tracked file.
 #
 # ufw's default policy is deny-incoming. Enabling it without an allow rule for
 # SSH would cut off remote logins, so this script adds that rule, proves it is
@@ -10,7 +14,8 @@
 set -euo pipefail
 [ "$(id -u)" -eq 0 ] || { echo "run with sudo" >&2; exit 1; }
 
-LAN=10.0.1.0/24
+LAN="${1:-${LAN_CIDR:-}}"
+[ -n "$LAN" ] || { echo "usage: sudo $0 <lan-cidr>   (or set LAN_CIDR)" >&2; exit 1; }
 SSH_PORT="$(awk '/^[[:space:]]*Port[[:space:]]+[0-9]+/{print $2; exit}' /etc/ssh/sshd_config 2>/dev/null || true)"
 SSH_PORT="${SSH_PORT:-22}"
 

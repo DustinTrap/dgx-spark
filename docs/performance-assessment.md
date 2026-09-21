@@ -1,4 +1,4 @@
-# Qwen3.8-Flash-Next on `10.0.1.227:9292` — performance assessment
+# Qwen3.8-Flash-Next on `<spark-ip>:9292` — performance assessment
 
 Measured 2026-09-19 from a LAN client (macOS) with [llama-benchy](https://github.com/eugr/llama-benchy) 0.4.0.
 Raw data: [`data/endpoint/`](../data/endpoint) (config and metrics snapshots), [`data/benchy/`](../data/benchy) (benchmark output).
@@ -169,7 +169,7 @@ Lifetime acceptance on real traffic before the benchmark was higher: 64.6% (posi
 ```bash
 export OPENAI_API_KEY=...   # llama-swap key; never commit it
 
-uvx llama-benchy --base-url http://10.0.1.227:9292/v1 --api-key "$OPENAI_API_KEY" \
+uvx llama-benchy --base-url http://<spark-ip>:9292/v1 --api-key "$OPENAI_API_KEY" \
   --model qwen3.8-flash-next --tokenizer Qwen/Qwen3.8-Flash-Next \
   --pp 2048 --tg 128 --runs 3 --no-cache --latency-mode generation \
   --concurrency 1 2 4 8 16 32 --format json --save-result sweep-pp2048-tg128.json
