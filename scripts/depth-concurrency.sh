@@ -11,15 +11,49 @@
 # counter are sampled every 5s to data/benchy/depthconc-kv-samples.csv - idle
 # snapshots show 0% KV usage, so the peak is only visible during the run.
 #
-# Usage: OPENAI_API_KEY=... scripts/depth-concurrency.sh ["<conc>:<depth>" ...]
+# THIS IS A LOAD TEST AGAINST A SHARED BOX. Every other consumer of the endpoint
+# slows to 1-6 tok/s while it runs. Announce a window on an issue first and pass
+# that issue number as ANNOUNCED_ISSUE (see AGENTS.md).
+#
+# Usage: LLM_HOST=http://<spark-ip>:9292 OPENAI_API_KEY=... ANNOUNCED_ISSUE=<n> \
+#          scripts/depth-concurrency.sh ["<conc>:<depth>" ...]
+#        DRY_RUN=1 scripts/depth-concurrency.sh [...]   # print the plan, contact nothing
+#
+# The output logs are piped through scripts/scrub-paths.sh, so absolute home
+# paths and the endpoint's address never reach a tracked file.
 set -euo pipefail
 
-: "${OPENAI_API_KEY:?set OPENAI_API_KEY to the llama-swap bearer token}"
-HOST="${LLM_HOST:-http://10.0.1.227:9292}"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+SCRUB="$ROOT/scripts/scrub-paths.sh"
 MODEL=qwen3.8-flash-next
-OUT="$(cd "$(dirname "$0")/.." && pwd)/data/benchy"
+OUT="$ROOT/data/benchy"
 STEPS=("$@")
 [ ${#STEPS[@]} -gt 0 ] || STEPS=(2:32768 4:32768 2:131072)
+
+benchy_cmd() {  # benchy_cmd <conc> <depth> <tag> <api-key> -> the llama-benchy argv, one word per line
+  printf '%s\n' uvx llama-benchy --base-url "$HOST/v1" --api-key "$4" \
+    --model "$MODEL" --tokenizer Qwen/Qwen3.8-Flash-Next \
+    --pp 2048 --tg 128 --depth "$2" --runs 3 --no-cache \
+    --latency-mode generation --concurrency "$1" --exit-on-first-fail \
+    --format json --save-result "$OUT/$3.json"
+}
+
+if [ -n "${DRY_RUN:-}" ]; then
+  HOST="${LLM_HOST:-http://<spark-ip>:9292}"
+  echo "DRY RUN - nothing is contacted, nothing is written."
+  for step in "${STEPS[@]}"; do
+    conc="${step%%:*}"; depth="${step##*:}"; tag="depthconc-c${conc}-d${depth}"
+    echo "== $tag"
+    benchy_cmd "$conc" "$depth" "$tag" '<redacted>' | tr '\n' ' ' | "$SCRUB"; echo
+    echo "   log -> $OUT/$tag.output.txt (scrubbed)" | "$SCRUB"
+  done
+  exit 0
+fi
+
+: "${OPENAI_API_KEY:?set OPENAI_API_KEY to the llama-swap bearer token}"
+: "${LLM_HOST:?set LLM_HOST to the endpoint, e.g. http://<spark-ip>:9292 (no default: this repo is public)}"
+: "${ANNOUNCED_ISSUE:?this is a load test on a shared box - set ANNOUNCED_ISSUE to the issue number where the window was announced}"
+HOST="$LLM_HOST"
 
 metric() {  # metric <name> -> value, from vLLM via llama-swap's upstream passthrough
   curl -sS -m 10 -H "Authorization: Bearer $OPENAI_API_KEY" "$HOST/upstream/$MODEL/metrics" \
@@ -45,11 +79,10 @@ for step in "${STEPS[@]}"; do
   trap 'kill $sampler 2>/dev/null || true' EXIT
 
   rc=0
-  uvx llama-benchy --base-url "$HOST/v1" --api-key "$OPENAI_API_KEY" \
-    --model "$MODEL" --tokenizer Qwen/Qwen3.8-Flash-Next \
-    --pp 2048 --tg 128 --depth "$depth" --runs 3 --no-cache \
-    --latency-mode generation --concurrency "$conc" --exit-on-first-fail \
-    --format json --save-result "$OUT/$tag.json" > "$OUT/$tag.output.txt" 2>&1 || rc=$?
+  cmd=()
+  while IFS= read -r word; do cmd+=("$word"); done < <(benchy_cmd "$conc" "$depth" "$tag" "$OPENAI_API_KEY")
+  # pipefail: a benchy failure still surfaces as rc even though the scrubber exits 0.
+  "${cmd[@]}" 2>&1 | "$SCRUB" > "$OUT/$tag.output.txt" || rc=$?
 
   kill $sampler 2>/dev/null || true
   wait $sampler 2>/dev/null || true   # reap quietly; otherwise bash prints a 'Terminated' job notice

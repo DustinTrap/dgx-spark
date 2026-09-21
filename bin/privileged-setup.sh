@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
 # One-time root setup for the Spark inference stack. Idempotent.
 #
-#   sudo ~/ai-stack/bin/privileged-setup.sh
+#   sudo ~/ai-stack/bin/privileged-setup.sh <lan-cidr>
+#
+# <lan-cidr> is your local subnet in CIDR form. It is an argument (or LAN_CIDR)
+# rather than a default because this repository is public: no private-network
+# address is ever written into a tracked file.
 #
 # What this changes:
 #   1. Enables linger for the user, so the llama-swap user service starts at
 #      boot without someone logging in first.
-#   2. Opens two TCP ports to the local subnet only (10.0.1.0/24):
+#   2. Opens two TCP ports to the local subnet only (<lan-cidr>):
 #        9292 - llama-swap, the OpenAI-compatible API (requires a bearer token)
 #        3000 - Open WebUI
 #      Nothing is opened to the internet; the default deny policy is untouched.
@@ -16,8 +20,10 @@
 set -euo pipefail
 [ "$(id -u)" -eq 0 ] || { echo "run with sudo" >&2; exit 1; }
 
-USER_NAME=dustintrap
-LAN=10.0.1.0/24
+USER_NAME="${STACK_USER:-${SUDO_USER:-}}"
+[ -n "$USER_NAME" ] || { echo "cannot tell which account owns the stack: run via sudo, or set STACK_USER" >&2; exit 1; }
+LAN="${1:-${LAN_CIDR:-}}"
+[ -n "$LAN" ] || { echo "usage: sudo $0 <lan-cidr>   (or set LAN_CIDR)" >&2; exit 1; }
 API_PORT=9292
 UI_PORT=3000
 

@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Scan what is about to be committed with the same rules CI uses (.gitleaks.toml).
+# Enable once per clone:  git config core.hooksPath .githooks
+# See docs/secret-scanning.md.
+set -euo pipefail
+
+if ! command -v gitleaks >/dev/null 2>&1; then
+  echo "pre-commit: gitleaks is not installed - refusing to commit to a public repo unscanned." >&2
+  echo "            install it (https://github.com/gitleaks/gitleaks#installing) or see docs/secret-scanning.md" >&2
+  exit 1
+fi
+
+root="$(git rev-parse --show-toplevel)"
+exec gitleaks git --pre-commit --staged --redact --no-banner --config "$root/.gitleaks.toml" "$root"
