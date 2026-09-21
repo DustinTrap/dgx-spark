@@ -434,6 +434,8 @@ docker logs -f qwen38-flash          # ready at "Application startup complete", 
 
 ```bash
 set -a; . ~/ai-stack/secrets/api-key.env; set +a      # pick up the new values
+scripts/mixed-workload.sh        one steady decode vs cold long prefills (load test: refuses without an announced window)
+docs/mixed-workload-plan.md      scheduler research, test matrix, runbook and the measured results behind the current flags
 scripts/check-keys.sh http://127.0.0.1:9292 \
   --revoked agent-host1-old=OLD_KEY \
   agent-host1=LLM_KEY_AGENT_HOST1 dashboard-host1=LLM_KEY_DASHBOARD_HOST1 \
