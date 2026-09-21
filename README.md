@@ -518,8 +518,15 @@ Re-read them after upgrading llama-swap.
 long prompt, requests that are already generating drop from ~30 tok/s to
 **1-6 tok/s** until it finishes - over a minute for a 131k prompt. Harmless with
 one user; with several agents sharing the box, one cold 100k prompt stalls all of
-them. The knob to test is `--max-num-batched-tokens` in the recipe's `serve.sh`
-(smaller = more decode steps between prefill chunks). Untested here.
+them. This was measured with chunked prefill already on at the recipe's
+`--max-num-batched-tokens 8192`: a running request gets one decode step per
+8k-token chunk, so the fix is a much smaller per-step prefill share
+(`--long-prefill-token-threshold`, optionally with `--scheduling-policy
+priority`), paid for in cold time to first token. Not yet measured: the test
+matrix, runbook and decision rule are in
+[docs/mixed-workload-plan.md](docs/mixed-workload-plan.md), and the harness is
+`scripts/mixed-workload.sh` (`--dry-run` first; it is itself the load it
+measures, so announce the window).
 
 **Concurrency limits were mismatched.** vLLM runs 8 sequences at once (inferred
 from queueing: at 10 in flight, exactly 8 start within ~1 s and 2 wait 20-40 s
