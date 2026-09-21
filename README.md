@@ -296,6 +296,36 @@ curl -s -o /dev/null -w '%{http_code}\n' http://<spark-ip>:9292/v1/chat/completi
 # expect 200, not 400
 ```
 
+## Request profiles
+
+The box serves several kinds of consumer at once, and most cannot send custom request
+fields. So the policy lives on the server: each consumer class uses its own **model-id
+alias**, and llama-swap stamps the matching fields into the request body
+(`filters.setParamsByID` in `llama-swap.yaml`). vLLM always receives the real model name.
+
+| Use this model id | For | priority | hybrid thinking | defaults (client may override) |
+|---|---|---:|---|---|
+| `qwen3.8-flash-next` | coding agents | 0 | client's choice | - |
+| `qwen3.8-flash-next-dashboard` | latency-sensitive periodic clients with hard timeouts | -10 | client's choice | - |
+| `qwen3.8-flash-next-assistant` | interactive tool-calling assistant (a human waits on a multi-step loop) | -5 | **off** | `max_tokens 2048`, `temperature 0.2` |
+| `qwen3.8-flash-next-assistant-deep` | the same consumer, hard questions | -5 | on | `max_tokens 4096` |
+| `qwen3.8-flash-next-chat` | human chat UI | -5 | client's choice | - |
+| `qwen3.8-flash-next-batch` | background / unattended work | 10 | client's choice | - |
+
+- **priority**: lower is scheduled sooner. It orders the waiting queue and picks the
+  preemption victim, so it only matters when all 8 slots are busy or KV runs short - it does
+  not speed up a request that is already running (measured, see
+  [docs/mixed-workload-plan.md](docs/mixed-workload-plan.md)).
+- **thinking** matters on every request: at ~30 tok/s single-stream (much less under load) a
+  few thousand reasoning tokens is a minute or more. Turn it off where a person or a timeout is
+  waiting on a multi-step loop; leave it on where answer quality is worth the wait.
+- Priority and thinking on an alias are **enforced**: a client that sends its own value is
+  overridden. Keys marked as defaults only apply when the request omits them.
+- Aliases are listed in `/v1/models` (`includeAliasesInList: true`) for clients that validate
+  their configured model name.
+- Verified on llama-swap v256 with a throwaway instance and an echo upstream before going
+  live. Editing the profile block is a config change, i.e. a ~13-minute model reload.
+
 ## Operations
 
 ```bash

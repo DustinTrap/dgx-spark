@@ -16,6 +16,10 @@ healthCheckTimeout: 1800
 logLevel: info
 startPort: 10001
 
+# Request-profile aliases (below) are listed in /v1/models so clients that
+# validate their configured model name against the listing accept them.
+includeAliasesInList: true
+
 # Bearer tokens: one key per consumer, so one consumer can be revoked without
 # touching the others. Required on every inference, UI and admin endpoint;
 # only the /health liveness probe answers without one.
@@ -83,6 +87,40 @@ models:
     # docs/mixed-workload-plan.md. Changing this line is a ~13-minute model reload.
     env:
       - "EXTRA=--scheduling-policy priority --long-prefill-token-threshold 1024"
+    # vLLM serves exactly one model name. Every alias below is rewritten to it, so
+    # the backend never sees an unknown model.
+    useModelName: "qwen3.8-flash-next"
+    # Request profiles (issue #9): one model-id alias per consumer class. llama-swap
+    # stamps these fields into the request body for that alias. Plain keys are
+    # ENFORCED (a client cannot override them); keys ending in "?" are defaults a
+    # client may override. priority: lower = scheduled sooner (only matters when
+    # the 8 slots are full or KV is short - see docs/mixed-workload-plan.md).
+    # Changing this block is a ~13-minute model reload.
+    filters:
+      setParamsByID:
+        # latency-sensitive periodic clients with hard timeouts (tiny calls)
+        "qwen3.8-flash-next-dashboard":
+          priority: -10
+        # interactive tool-calling assistant: a human is waiting on a multi-step
+        # loop, so hybrid thinking is OFF and answers are kept short
+        "qwen3.8-flash-next-assistant":
+          priority: -5
+          chat_template_kwargs:
+            enable_thinking: false
+          max_tokens?: 2048
+          temperature?: 0.2
+        # same consumer, hard questions: thinking ON, longer answers
+        "qwen3.8-flash-next-assistant-deep":
+          priority: -5
+          chat_template_kwargs:
+            enable_thinking: true
+          max_tokens?: 4096
+        # human chat UI
+        "qwen3.8-flash-next-chat":
+          priority: -5
+        # background / unattended work yields to everything else
+        "qwen3.8-flash-next-batch":
+          priority: 10
 
 # No group: with one model there is nothing to swap between, and an exclusive
 # group would only add a way for it to get unloaded.
