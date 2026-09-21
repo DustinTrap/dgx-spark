@@ -2,7 +2,10 @@
 #
 # Staged config for the cutover to Qwen3.8-Flash-Next as the only served model.
 # Swap it in with:  cp llama-swap.qwen38.yaml llama-swap.yaml
-# (llama-swap watches the file and reloads within ~2s.)
+# (llama-swap watches the file and reloads within ~2s. A reload is NOT free:
+# it stops every model process and the preload hook starts the model again,
+# so ANY edit to this file on the host costs a full ~13 minute model load.
+# See README -> Operations -> Keys and rotation before touching it.)
 #
 # Why llama-swap is still here with one model: it owns the bearer token, the
 # 0.0.0.0:9292 surface every client and Open WebUI already points at, and the
@@ -13,9 +16,47 @@ healthCheckTimeout: 1800
 logLevel: info
 startPort: 10001
 
-# Bearer token required on all inference endpoints.
+# Bearer tokens: one key per consumer, so one consumer can be revoked without
+# touching the others. Required on every inference, UI and admin endpoint;
+# only the /health liveness probe answers without one.
+#
+# Values NEVER go in this file. Each entry is an env macro resolved from the
+# llama-swap process environment, which systemd fills from
+# ~/ai-stack/secrets/api-key.env (see secrets.env.example).
+#
+# Consumer naming convention - names only, the name is what you revoke by:
+#   agent-<host>      coding agents on one operator workstation
+#   dashboard-<host>  one always-on dashboard / kiosk client
+#   webui             the Open WebUI container on this box
+# The variable is the name upper-cased with "-" as "_" and an LLM_KEY_ prefix:
+#   agent-host1 -> LLM_KEY_AGENT_HOST1. One line per consumer; add a line (and
+#   a variable) per extra host rather than sharing a key between hosts.
+#
+# Facts about llama-swap that shape this list (sources in the README):
+#   - apiKeys is a flat list of strings. Keys have no names or labels inside
+#     llama-swap, all keys are equivalent, and nothing is logged or counted
+#     per key. The names above exist only in this file and the secrets file.
+#   - Every variable referenced here MUST be set and non-empty in the
+#     environment, or llama-swap refuses to load the config (at startup: it
+#     does not start; on a reload: it keeps the old config and logs a warning).
+#     Fill the secrets file BEFORE installing this file.
+#   - The environment is read when the process starts. A new or changed value
+#     only takes effect on a service restart, and a restart reloads the model.
+#   - Do not write an env macro inside a comment: llama-swap releases before
+#     v188 expanded macros in comments too.
+#
+# LLM_KEY_STANDBY is a pre-issued spare that no consumer holds. It lets a
+# rotation hand the consumer a key that is ALREADY accepted (no restart), so
+# the only model reload is the one that retires the old key.
 apiKeys:
-  - "${env.LLM_API_KEY}"
+  - "${env.LLM_API_KEY}"   # LEGACY shared key - kept valid during migration; remove at a later planned reload
+  - "${env.LLM_KEY_AGENT_HOST1}"
+  - "${env.LLM_KEY_DASHBOARD_HOST1}"
+  - "${env.LLM_KEY_DASHBOARD_HOST2}"
+  - "${env.LLM_KEY_CLUSTER_ASSISTANT}"
+  - "${env.LLM_KEY_SANDBOX_AGENT}"
+  - "${env.LLM_KEY_WEBUI}"
+  - "${env.LLM_KEY_STANDBY}"
 
 models:
   "qwen3.8-flash-next":
@@ -37,6 +78,11 @@ models:
     # benchmark queueing (docs/performance-assessment.md), not read from
     # serve.sh - if --max-num-seqs there differs, change this to match.
     concurrencyLimit: 8
+    # Scheduler tuning (issue #3), passed to the recipe's serve.sh through its EXTRA
+    # knob so the vendored script stays untouched. Chosen by measurement - see
+    # docs/mixed-workload-plan.md. Changing this line is a ~13-minute model reload.
+    env:
+      - "EXTRA=--scheduling-policy priority --long-prefill-token-threshold 1024"
 
 # No group: with one model there is nothing to swap between, and an exclusive
 # group would only add a way for it to get unloaded.
