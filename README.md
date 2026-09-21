@@ -338,6 +338,13 @@ source, see [Sources](#sources-for-the-key-handling-facts)):
   model for everybody. Per-consumer keys buy **revocation**, not least
   privilege. Upstream's own advice for anything more is a reverse proxy or API
   gateway in front.
+- **Fairness between consumers is not something a key can carry.** The only
+  related lever is request-level: llama-swap forwards the request body as sent,
+  and its `filters.setParamsByID` can stamp body parameters per model-id alias.
+  If vLLM is launched with `--scheduling-policy priority`, a body `priority`
+  field could therefore be set per alias (say, an interactive alias and a batch
+  alias). That is chosen by the client, not enforced per key, and it is a YAML
+  change plus a launch-flag change — i.e. a model reload. Noted, not done.
 - `/health` answers without a key. A client that only needs "is the box up?"
   should probe `/health` and **hold no key at all**; that takes the key off
   that host's periodic traffic entirely.
@@ -484,9 +491,9 @@ that currently does both. Neither is implemented or tested here.
 
 #### Sources for the key-handling facts
 
-From `github.com/mostlygeek/llama-swap` at commit `96e6f94` (2026-09-20, after
-release v256). **The release installed on the box was not checked** — confirm it
-with `llama-swap -version` and re-read these if it is much older.
+From `github.com/mostlygeek/llama-swap` at tag **v256** (commit `6701d0d`), the
+release installed on the box. File and line references are for that tag.
+Re-read them after upgrading llama-swap.
 
 | Fact | Where |
 |---|---|
@@ -497,6 +504,7 @@ with `llama-swap -version` and re-read these if it is much older.
 | Reload = build new server, shut down old one | `llama-swap.go:306-390` |
 | Server shutdown stops every model process | `internal/server/server.go:502-536`, `internal/router/base.go:278-306` |
 | `/health` is outside the auth chain; `/unload`, `/logs`, `/upstream` are inside it | `internal/server/server.go:336-375` |
+| Request filters: `stripParams`, `setParams`, `setParamsByID` (per model / alias, never per key) | `docs/config.example.yaml:353-395` |
 | Introduced: `apiKeys` v179 (#436); env macros in `apiKeys` v184 (#467); macros in comments no longer expanded v188 (#496); `SIGHUP` reload v205 (#685) | `git tag --contains` on those commits |
 | Open upstream requests: per-key permissions #971, per-key attribution #972, keys from a file #1009 | upstream issue tracker |
 | Open WebUI persistent config precedence | `open-webui/docs`, `docs/reference/env-configuration.mdx` |
