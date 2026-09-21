@@ -195,6 +195,14 @@ dominates. On 2k-133k prompts benchy measured 1,670-1,990 tok/s.
 
 ## Configuration decisions
 
+**`--scheduling-policy priority --long-prefill-token-threshold 1024`** - passed through the
+recipe's `EXTRA=` knob by a per-model `env:` entry in `llama-swap.yaml`, so the vendored
+`serve.sh` stays untouched. The threshold caps how much of each scheduler step one long prompt
+may take; unlike lowering `--max-num-batched-tokens` it does not change the compile-cache key
+or the memory-profiling run. 1024 was chosen by measurement over 256 (see Known issues).
+Priority scheduling is inert until a client sends a non-zero `priority`; llama-swap forwards
+the field unchanged. If the server is ever rolled back to `fcfs`, clients must stop sending it.
+
 **`GPU_MEM=0.80`** — upstream's value. 0.85 drifted into swap after a day; 0.875
 was OOM-killed on a long prefill.
 
@@ -514,19 +522,16 @@ Re-read them after upgrading llama-swap.
 
 ## Known issues and tuning
 
-**A long prefill starves everyone else's decode.** While one request prefills a
-long prompt, requests that are already generating drop from ~30 tok/s to
-**1-6 tok/s** until it finishes - over a minute for a 131k prompt. Harmless with
-one user; with several agents sharing the box, one cold 100k prompt stalls all of
-them. This was measured with chunked prefill already on at the recipe's
-`--max-num-batched-tokens 8192`: a running request gets one decode step per
-8k-token chunk, so the fix is a much smaller per-step prefill share
-(`--long-prefill-token-threshold`, optionally with `--scheduling-policy
-priority`), paid for in cold time to first token. Not yet measured: the test
-matrix, runbook and decision rule are in
-[docs/mixed-workload-plan.md](docs/mixed-workload-plan.md), and the harness is
-`scripts/mixed-workload.sh` (`--dry-run` first; it is itself the load it
-measures, so announce the window).
+**A long prefill still slows everyone else's decode - but no longer stalls them.** As found
+(`--max-num-batched-tokens 8192`, fcfs), one cold ~131k prompt dropped a running stream from
+~31 tok/s to **0.5 tok/s** for 100 s and made a short request wait **17 s** for its first token;
+three cold ~100k prompts froze a stream for 330 s. With `--long-prefill-token-threshold 1024`
+(measured 2026-09-21) short requests get their first token in **1.4-2.5 s**, a running stream
+keeps 8-10x more throughput, and long-context clients pay nothing. Going smaller (256) was
+measured and rejected: prefill work is conserved, so the victim finishes later and cold
+time-to-first-token rises 40-57 %. Method, tables and the decision:
+[docs/mixed-workload-plan.md](docs/mixed-workload-plan.md); harness:
+`scripts/mixed-workload.sh` (refuses to run without an announced window).
 
 **Concurrency limits were mismatched.** vLLM runs 8 sequences at once (inferred
 from queueing: at 10 in flight, exactly 8 start within ~1 s and 2 wait 20-40 s

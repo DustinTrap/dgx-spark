@@ -1,0 +1,636 @@
+{
+  "tool": "scripts/mixed-workload.sh",
+  "schema": 1,
+  "timestamp_utc": "2026-09-21 15:57:29Z",
+  "label": "c0-w2",
+  "server_config_as_stated_by_operator": "not recorded",
+  "vllm_version": "{\"version\":\"0.1.dev20073+g8e685d198\"}",
+  "model": "qwen3.8-flash-next",
+  "params": {
+    "victim_tokens": 8192,
+    "aggressors": 3,
+    "depth_target_tokens": 100000,
+    "spacing_s": 45,
+    "warmup_s": 20,
+    "aggressor_tokens": 16,
+    "probe_every_s": 10,
+    "victim_priority": null,
+    "max_duration_s": 1500,
+    "tokens_per_word": 1.0365,
+    "calibrated": true
+  },
+  "victim": {
+    "ttft_s": 0.29,
+    "wall_s": 503.65,
+    "prompt_tokens": 96,
+    "completion_tokens": 8192,
+    "token_count_source": "usage",
+    "baseline_tok_per_s_before_aggressors": 31.89,
+    "tok_per_s_while_aggressors_prefill": 0.3,
+    "seconds_spent_under_prefill": 329.98,
+    "fraction_of_baseline_kept": 0.01,
+    "tok_per_s_after_last_prefill": 29.05,
+    "tok_per_s_by_5s_interval": [
+      {
+        "t": 0,
+        "tok_per_s": 35.09,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 5,
+        "tok_per_s": 30.38,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 10,
+        "tok_per_s": 29.89,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 15,
+        "tok_per_s": 32.52,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 20,
+        "tok_per_s": 0.0,
+        "aggressor_prefilling": true
+      },
+      {
+        "t": 25,
+        "tok_per_s": 0.0,
+        "aggressor_prefilling": true
+      },
+      {
+        "t": 30,
+        "tok_per_s": 0.0,
+        "aggressor_prefilling": true
+      },
+      {
+        "t": 35,
+        "tok_per_s": 0.0,
+        "aggressor_prefilling": true
+      },
+      {
+        "t": 40,
+        "tok_per_s": 0.0,
+        "aggressor_prefilling": true
+      },
+      {
+        "t": 45,
+        "tok_per_s": 0.0,
+        "aggressor_prefilling": true
+      },
+      {
+        "t": 50,
+        "tok_per_s": 0.0,
+        "aggressor_prefilling": true
+      },
+      {
+        "t": 55,
+        "tok_per_s": 0.0,
+        "aggressor_prefilling": true
+      },
+      {
+        "t": 60,
+        "tok_per_s": 0.0,
+        "aggressor_prefilling": true
+      },
+      {
+        "t": 65,
+        "tok_per_s": 0.0,
+        "aggressor_prefilling": true
+      },
+      {
+        "t": 70,
+        "tok_per_s": 0.0,
+        "aggressor_prefilling": true
+      },
+      {
+        "t": 75,
+        "tok_per_s": 0.0,
+        "aggressor_prefilling": true
+      },
+      {
+        "t": 80,
+        "tok_per_s": 0.0,
+        "aggressor_prefilling": true
+      },
+      {
+        "t": 85,
+        "tok_per_s": 0.0,
+        "aggressor_prefilling": true
+      },
+      {
+        "t": 90,
+        "tok_per_s": 0.0,
+        "aggressor_prefilling": true
+      },
+      {
+        "t": 95,
+        "tok_per_s": 0.0,
+        "aggressor_prefilling": true
+      },
+      {
+        "t": 100,
+        "tok_per_s": 0.0,
+        "aggressor_prefilling": true
+      },
+      {
+        "t": 105,
+        "tok_per_s": 0.0,
+        "aggressor_prefilling": true
+      },
+      {
+        "t": 110,
+        "tok_per_s": 0.0,
+        "aggressor_prefilling": true
+      },
+      {
+        "t": 115,
+        "tok_per_s": 0.0,
+        "aggressor_prefilling": true
+      },
+      {
+        "t": 120,
+        "tok_per_s": 0.0,
+        "aggressor_prefilling": true
+      },
+      {
+        "t": 125,
+        "tok_per_s": 0.0,
+        "aggressor_prefilling": true
+      },
+      {
+        "t": 130,
+        "tok_per_s": 0.0,
+        "aggressor_prefilling": true
+      },
+      {
+        "t": 135,
+        "tok_per_s": 0.0,
+        "aggressor_prefilling": true
+      },
+      {
+        "t": 140,
+        "tok_per_s": 0.0,
+        "aggressor_prefilling": true
+      },
+      {
+        "t": 145,
+        "tok_per_s": 0.0,
+        "aggressor_prefilling": true
+      },
+      {
+        "t": 150,
+        "tok_per_s": 0.0,
+        "aggressor_prefilling": true
+      },
+      {
+        "t": 155,
+        "tok_per_s": 0.0,
+        "aggressor_prefilling": true
+      },
+      {
+        "t": 160,
+        "tok_per_s": 0.0,
+        "aggressor_prefilling": true
+      },
+      {
+        "t": 165,
+        "tok_per_s": 0.0,
+        "aggressor_prefilling": true
+      },
+      {
+        "t": 170,
+        "tok_per_s": 0.0,
+        "aggressor_prefilling": true
+      },
+      {
+        "t": 175,
+        "tok_per_s": 0.0,
+        "aggressor_prefilling": true
+      },
+      {
+        "t": 180,
+        "tok_per_s": 0.0,
+        "aggressor_prefilling": true
+      },
+      {
+        "t": 185,
+        "tok_per_s": 0.0,
+        "aggressor_prefilling": true
+      },
+      {
+        "t": 190,
+        "tok_per_s": 0.0,
+        "aggressor_prefilling": true
+      },
+      {
+        "t": 195,
+        "tok_per_s": 0.0,
+        "aggressor_prefilling": true
+      },
+      {
+        "t": 200,
+        "tok_per_s": 0.0,
+        "aggressor_prefilling": true
+      },
+      {
+        "t": 205,
+        "tok_per_s": 0.0,
+        "aggressor_prefilling": true
+      },
+      {
+        "t": 210,
+        "tok_per_s": 0.0,
+        "aggressor_prefilling": true
+      },
+      {
+        "t": 215,
+        "tok_per_s": 0.0,
+        "aggressor_prefilling": true
+      },
+      {
+        "t": 220,
+        "tok_per_s": 0.0,
+        "aggressor_prefilling": true
+      },
+      {
+        "t": 225,
+        "tok_per_s": 0.0,
+        "aggressor_prefilling": true
+      },
+      {
+        "t": 230,
+        "tok_per_s": 0.0,
+        "aggressor_prefilling": true
+      },
+      {
+        "t": 235,
+        "tok_per_s": 0.0,
+        "aggressor_prefilling": true
+      },
+      {
+        "t": 240,
+        "tok_per_s": 0.57,
+        "aggressor_prefilling": true
+      },
+      {
+        "t": 245,
+        "tok_per_s": 27.46,
+        "aggressor_prefilling": true
+      },
+      {
+        "t": 250,
+        "tok_per_s": 25.04,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 255,
+        "tok_per_s": 24.01,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 260,
+        "tok_per_s": 27.02,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 265,
+        "tok_per_s": 29.98,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 270,
+        "tok_per_s": 30.7,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 275,
+        "tok_per_s": 30.14,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 280,
+        "tok_per_s": 26.61,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 285,
+        "tok_per_s": 30.87,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 290,
+        "tok_per_s": 30.02,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 295,
+        "tok_per_s": 29.95,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 300,
+        "tok_per_s": 30.3,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 305,
+        "tok_per_s": 28.13,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 310,
+        "tok_per_s": 31.38,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 315,
+        "tok_per_s": 31.36,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 320,
+        "tok_per_s": 30.02,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 325,
+        "tok_per_s": 23.85,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 330,
+        "tok_per_s": 23.75,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 335,
+        "tok_per_s": 25.8,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 340,
+        "tok_per_s": 31.93,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 345,
+        "tok_per_s": 29.84,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 350,
+        "tok_per_s": 29.08,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 355,
+        "tok_per_s": 32.7,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 360,
+        "tok_per_s": 32.02,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 365,
+        "tok_per_s": 25.39,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 370,
+        "tok_per_s": 28.24,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 375,
+        "tok_per_s": 24.67,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 380,
+        "tok_per_s": 25.02,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 385,
+        "tok_per_s": 25.73,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 390,
+        "tok_per_s": 33.67,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 395,
+        "tok_per_s": 28.57,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 400,
+        "tok_per_s": 31.97,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 405,
+        "tok_per_s": 32.84,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 410,
+        "tok_per_s": 28.09,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 415,
+        "tok_per_s": 31.6,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 420,
+        "tok_per_s": 29.29,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 425,
+        "tok_per_s": 28.05,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 430,
+        "tok_per_s": 26.64,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 435,
+        "tok_per_s": 25.34,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 440,
+        "tok_per_s": 26.57,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 445,
+        "tok_per_s": 30.69,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 450,
+        "tok_per_s": 36.39,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 455,
+        "tok_per_s": 34.18,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 460,
+        "tok_per_s": 28.78,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 465,
+        "tok_per_s": 29.38,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 470,
+        "tok_per_s": 30.26,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 475,
+        "tok_per_s": 28.29,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 480,
+        "tok_per_s": 27.21,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 485,
+        "tok_per_s": 28.01,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 490,
+        "tok_per_s": 30.87,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 495,
+        "tok_per_s": 31.91,
+        "aggressor_prefilling": false
+      },
+      {
+        "t": 500,
+        "tok_per_s": 28.63,
+        "aggressor_prefilling": false
+      }
+    ],
+    "error": null
+  },
+  "aggressors": [
+    {
+      "role": "aggressor",
+      "index": 1,
+      "planned_start": 20,
+      "start": 20.053,
+      "ttft": 85.744,
+      "end": 148.853,
+      "prompt_tokens": 96551,
+      "completion_tokens": 16,
+      "error": null,
+      "token_count_source": "usage",
+      "prefill_tok_per_s_effective": 1126.04
+    },
+    {
+      "role": "aggressor",
+      "index": 2,
+      "planned_start": 65,
+      "start": 65.078,
+      "ttft": 114.012,
+      "end": 221.933,
+      "prompt_tokens": 96552,
+      "completion_tokens": 16,
+      "error": null,
+      "token_count_source": "usage",
+      "prefill_tok_per_s_effective": 846.86
+    },
+    {
+      "role": "aggressor",
+      "index": 3,
+      "planned_start": 110,
+      "start": 110.065,
+      "ttft": 135.798,
+      "end": 246.495,
+      "prompt_tokens": 96548,
+      "completion_tokens": 16,
+      "error": null,
+      "token_count_source": "usage",
+      "prefill_tok_per_s_effective": 710.97
+    }
+  ],
+  "probes": [
+    {
+      "role": "probe",
+      "start": 30.003,
+      "ttft": 13.559,
+      "end": 87.96,
+      "prompt_tokens": 111,
+      "completion_tokens": 16,
+      "error": null,
+      "token_count_source": "usage"
+    },
+    {
+      "role": "probe",
+      "start": 97.96,
+      "ttft": 13.923,
+      "end": 155.32,
+      "prompt_tokens": 112,
+      "completion_tokens": 16,
+      "error": null,
+      "token_count_source": "usage"
+    },
+    {
+      "role": "probe",
+      "start": 165.32,
+      "ttft": 13.77,
+      "end": 221.932,
+      "prompt_tokens": 113,
+      "completion_tokens": 16,
+      "error": null,
+      "token_count_source": "usage"
+    },
+    {
+      "role": "probe",
+      "start": 231.934,
+      "ttft": 12.13,
+      "end": 246.251,
+      "prompt_tokens": 112,
+      "completion_tokens": 16,
+      "error": null,
+      "token_count_source": "usage"
+    }
+  ],
+  "server": {
+    "preemptions_before": "0.0",
+    "kv_samples_csv": "mixed-c0-w2-n3-d100000-kv-samples.csv"
+  },
+  "timed_out": false,
+  "errors": [],
+  "acceptance_issue_3": {
+    "target_fraction": 0.5,
+    "met": null,
+    "note": "defined for one cold 131k aggressor; null for any other shape"
+  }
+}

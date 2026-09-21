@@ -476,6 +476,69 @@ prefill is a delay, not a failure. So the setting should lean toward the small
 clients, up to the point in rule 3 where a delay becomes a failure for the
 agents too. That point, not the 50 % figure, is the real constraint.
 
+## (g) Results - measured 2026-09-21
+
+Run on the box over loopback during an announced window, with the other consumers paused.
+Harness: `scripts/mixed-workload.sh`. Raw data: `data/benchy/mixed-c0b-*`, `mixed-c0-w2-*`,
+`mixed-c1-*`, `mixed-c2-*`. Every run: 0 preemptions, 0 errors, victim recovered to 29-31 tok/s
+after the prefill. Three reloads (14.5, 12.8 and ~14 minutes).
+
+**W1 - one cold ~131k prompt against one steady 8,192-token decode**
+
+| Config | Victim decode during prefill | Time under prefill | Short-request TTFT (median) | Aggressor TTFT | Victim wall |
+|---|---:|---:|---:|---:|---:|
+| C0: 8192 batch, fcfs (as found) | 0.48 tok/s (2 %) | 101 s | 17.2 s | 101 s | 362 s |
+| C1: + priority, threshold **1024** | 3.11 tok/s (10 %) | 92 s | **1.36 s** | 93 s | 359 s |
+| C1 with `priority: -10` on the victim | 3.09 tok/s (10 %) | 94 s | 1.96 s | 94 s | 367 s |
+| C2: + priority, threshold **256** | 7.53 tok/s (22 %) | 141 s | 0.85 s | **141 s** | 372 s |
+
+**W2 - three cold ~100k prompts 45 s apart (the shape of a real agent session)**
+
+| Config | Victim decode during prefill | Time under prefill | Short-request TTFT (median) | Aggressor TTFT (1/2/3) | Victim wall |
+|---|---:|---:|---:|---:|---:|
+| C0 | 0.30 tok/s (1 %) | 330 s | 13.8 s | 86 / 114 / 136 s | 504 s |
+| C1 (1024) | 2.35 tok/s (8 %) | 325 s | **2.46 s** | 89 / 128 / 110 s | **450 s** |
+| C1 with priority on the victim | 2.30 tok/s (7 %) | 320 s | 2.31 s | 88 / 125 / 108 s | 453 s |
+| C2 (256) | 5.44 tok/s (17 %) | **462 s** | 0.98 s | **140 / 168 / 155 s** | 477 s |
+
+### What the numbers say
+
+1. **`--long-prefill-token-threshold 1024` is a free win.** Short requests go from 14-17 s to
+   1.4-2.5 s for their first token, a decoding stream keeps 8-10x more throughput, and the
+   long-context clients pay nothing measurable (aggressor TTFT is unchanged or slightly better).
+2. **Prefill work is conserved.** Shrinking the per-step share further gives a running stream
+   a larger slice of each step, but stretches the prefill period and adds per-step overhead:
+   at 256 the steady stream spends 462 s under prefill instead of 325 s and finishes LATER
+   (477 s vs 450 s), while cold long-prompt TTFT rises 40-57 %. Smoothness is bought with
+   everyone's completion time.
+3. **The step-cost model in (a) is good for direction, optimistic at the small end.** It
+   predicted 12 % at 1024 (measured 10 %) and 35 % at 256 (measured 22 % / 17 %): real
+   per-step overhead on this hardware (MTP drafts, MoE routing, the hybrid-layer scan) is
+   larger than the model's constant.
+4. **Priority does nothing for a stream that is already decoding** (3.09 vs 3.11 tok/s;
+   453 s vs 450 s). It orders the WAITING queue and chooses the preemption victim, so its value
+   appears only when the 8 slots are full or KV runs short - neither happened here. It is
+   inert when every request has the default priority, so it stays enabled: a latency-sensitive
+   client can now send a negative `priority` and jump the queue when the box is saturated.
+5. **The 50 % target in the issue is not reachable at an acceptable cost** on this build.
+   Extrapolating the two measured points, it would need a threshold near 64-128 and roughly
+   double the cold TTFT, for a later completion time. Recorded as such rather than chased.
+
+### Decision
+
+**`--scheduling-policy priority --long-prefill-token-threshold 1024`**, with
+`--max-num-batched-tokens` left at the recipe's 8192. By the rule in (f): both candidates pass
+the safety checks; 1024 is the largest chunk that passes, has the best victim completion time,
+and costs the long-context clients nothing.
+
+What this does NOT fix: a client whose own request needs several minutes of uninterrupted
+decode will still be slowed by other clients' prefill (450 s instead of ~260 s for an 8k-token
+answer under W2). That is a property of one GPU shared between prefill and decode, not of the
+scheduler settings. The remedies are on the client side: shorter generations (disable hybrid
+thinking where it is not needed), warm prefixes (the server-side prefix cache already serves
+~80 % of prompt tokens), fewer simultaneous cold long prompts, and client timeouts sized for a
+shared box.
+
 ## Not determined
 
 - Whether the installed build's scheduler matches public `main` on the two
