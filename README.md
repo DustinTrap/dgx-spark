@@ -16,7 +16,7 @@ instead of memory. Details under [How it fits](#how-it-fits).
 ```
   coding agent / Open WebUI
             |
-            |  http://<spark-ip>:9292/v1      bearer token, LAN only
+            |  http://<spark-ip>:9292/v1      one bearer key per consumer, LAN only
             v
       llama-swap  ......................  auth, model lifecycle, OpenAI surface
             |
@@ -30,8 +30,9 @@ instead of memory. Details under [How it fits](#how-it-fits).
 ```
 
 llama-swap is kept even though only one model is served: it owns the bearer
-token, the `0.0.0.0:9292` surface every client already points at, and the
-process lifecycle. vLLM itself has no authentication, which is why its port is
+keys (one per consumer, see [Keys and rotation](#keys-and-rotation)), the
+`0.0.0.0:9292` surface every client already points at, and the process
+lifecycle. vLLM itself has no authentication, which is why its port is
 bound to loopback.
 
 ## Hardware
@@ -111,14 +112,20 @@ repo is public and never records a private-network address.
 `ufw status` reporting `active` from `systemctl` is **not** the same as ufw
 actually enforcing. Check `sudo ufw status verbose` and look for `Status: active`.
 
-**2. API key:**
+**2. API keys** — one per consumer, plus a standby. Names and the reasoning are
+in [Keys and rotation](#keys-and-rotation).
 
 ```bash
-mkdir -p ~/ai-stack/secrets
-printf 'LLM_API_KEY=sk-%s\n' "$(openssl rand -base64 48 | tr -dc 'A-Za-z0-9' | head -c 48)" \
-  > ~/ai-stack/secrets/api-key.env
+umask 077
+mkdir -p ~/ai-stack/secrets && chmod 700 ~/ai-stack/secrets
+cp secrets.env.example ~/ai-stack/secrets/api-key.env
 chmod 600 ~/ai-stack/secrets/api-key.env
+# then, for EVERY variable in that file, paste a fresh value from:
+openssl rand -hex 32
 ```
+
+Every variable that `llama-swap.yaml` lists under `apiKeys` must be set and
+non-empty before step 6, or llama-swap refuses to start.
 
 **3. Upstream recipe + our patches:**
 
@@ -206,20 +213,56 @@ a 97 GiB container running with nothing managing it.
 **`--restart=no`** applied by our launcher after `serve.sh` starts the container
 with `unless-stopped`. llama-swap must be the only thing deciding residency.
 
+**One bearer key per consumer** — so a leak on the least-trusted client can be
+contained by revoking that one key. llama-swap's `apiKeys` is a flat, unnamed
+list: this buys revocation, **not** attribution, per-consumer limits or least
+privilege. Any change to the list costs a model reload; a standing standby key
+keeps a rotation to one reload. Procedure and sources:
+[Keys and rotation](#keys-and-rotation).
+
+**Transport on `:9292` — OPEN, not decided.** Today every request, including
+periodic probes from always-on clients, carries its bearer key over cleartext
+HTTP on the LAN. Per-consumer keys limit what a captured key is worth (one
+consumer, revocable); they do not stop the capture. Three positions, for the
+operator to choose between:
+
+| | A. Stay on LAN-only cleartext HTTP | B. TLS in llama-swap itself | C. TLS terminator / reverse proxy in front |
+|---|---|---|---|
+| What changes | nothing | add `-tls-cert-file` / `-tls-key-file` to the unit | new proxy on the LAN port; llama-swap moves to loopback |
+| Key on the wire | readable by anyone who can observe the LAN segment: a compromised host, a rogue or shared Wi-Fi client, an ARP-spoofing device | encrypted | encrypted |
+| New moving parts | none | a certificate to issue, renew and get trusted by **every** consumer | the same certificate work **plus** a proxy that every request now depends on |
+| Consumer impact | none | every consumer's base URL changes scheme (`http` → `https`) at once; each must trust the CA or cert; enabling it is one restart = one ~13 min reload | same URL change; the on-box web UI reaches llama-swap over the Docker bridge, so it needs its own route (through the proxy, or a second listener) |
+| Beyond encryption | — | nothing else: keys stay unnamed and equivalent | can name consumers in access logs, rate-limit per consumer, and change keys **without a model reload** (see [Keys and rotation](#keys-and-rotation)) |
+| Risks specific to it | the exposure above, accepted and written down | certificate expiry takes every consumer down together | proxy must not buffer streamed responses and needs timeouts sized for prefill (a cold 133k prompt is ~72 s before the first byte); a misconfigured proxy is an outage for everyone |
+
+Things that hold whichever is chosen: ufw already limits `:9292` to the LAN
+subnet; clients that only need liveness can probe `/health` with **no key**,
+which removes the most frequent key-bearing traffic from the weakest hosts today;
+and a key captured under A is only as dangerous as the time until it is rotated.
+What would tip the choice: whether any consumer is on Wi-Fi or a segment shared
+with untrusted devices (towards B/C), whether per-consumer attribution and
+limits are wanted anyway (towards C), and how much operational surface a
+single-operator box should carry (towards A). Record the decision here, either
+way, when it is made.
+
 ## Connecting agents
 
 ```bash
 # Claude Code — /v1/messages works natively
 ANTHROPIC_BASE_URL=http://<spark-ip>:9292 \
-ANTHROPIC_AUTH_TOKEN=$LLM_API_KEY \
+ANTHROPIC_AUTH_TOKEN=$TOKEN \
 ANTHROPIC_MODEL=qwen3.8-flash-next \
 claude
 
 # OpenAI-compatible (aider, cline, continue, opencode)
 OPENAI_BASE_URL=http://<spark-ip>:9292/v1
-OPENAI_API_KEY=$LLM_API_KEY
+OPENAI_API_KEY=$TOKEN
 # model: qwen3.8-flash-next
 ```
+
+`$TOKEN` is **that consumer's own key** — never one shared with another host.
+Keep it in the client's own secret store or a `0600` file, not in a shell rc
+file that gets synced or committed.
 
 All four endpoints are live: `/v1/models`, `/v1/chat/completions`,
 `/v1/completions`, `/v1/messages`.
@@ -239,7 +282,7 @@ rewrites the template's effort line to map `high`/`max` → `xhigh` and
 
 ```bash
 curl -s -o /dev/null -w '%{http_code}\n' http://<spark-ip>:9292/v1/chat/completions \
-  -H "Authorization: Bearer $LLM_API_KEY" -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
   -d '{"model":"qwen3.8-flash-next","reasoning_effort":"high",
        "messages":[{"role":"user","content":"Say OK"}],"max_tokens":200}'
 # expect 200, not 400
@@ -251,20 +294,212 @@ curl -s -o /dev/null -w '%{http_code}\n' http://<spark-ip>:9292/v1/chat/completi
 systemctl --user status llama-swap.service
 journalctl --user -u llama-swap.service -f
 docker logs -f qwen38-flash
-curl -s -H "Authorization: Bearer $LLM_API_KEY" http://127.0.0.1:9292/v1/models
+curl -s -H "Authorization: Bearer $TOKEN" http://127.0.0.1:9292/v1/models
 
 # vLLM's own metrics, through llama-swap (KV usage, preemptions, spec-decode acceptance)
-curl -s -H "Authorization: Bearer $LLM_API_KEY" \
+curl -s -H "Authorization: Bearer $TOKEN" \
   http://127.0.0.1:9292/upstream/qwen3.8-flash-next/metrics | grep -E 'kv_cache_usage|preemptions_total|spec_decode'
 ```
 
 `/metrics` and `/v1/models` can take over 10 s to answer while a long prefill is
 running. Give health checks and monitors a generous timeout.
 
-**Rotating the key** costs ~13 minutes of downtime — restarting llama-swap fires
-`ExecStopPost`, which removes the container and forces a full reload. Open WebUI
-must be restarted too; the old key is baked into its container environment and it
-will silently 401 otherwise.
+### Keys and rotation
+
+Every consumer holds **its own** bearer key, so one consumer can be revoked
+without touching the others. Names only — values live in
+`~/ai-stack/secrets/api-key.env` on the box (`0600`) and nowhere else.
+
+| Consumer name | Who holds it | Variable |
+|---|---|---|
+| `agent-<host>` | coding agents on one operator workstation | `LLM_KEY_AGENT_<HOST>` |
+| `dashboard-<host>` | one always-on dashboard / kiosk client | `LLM_KEY_DASHBOARD_<HOST>` |
+| `webui` | the Open WebUI container on this box | `LLM_KEY_WEBUI` |
+| `standby` | **nobody** — a pre-issued spare, see below | `LLM_KEY_STANDBY` |
+
+One key per host, never one per class shared across hosts. The variable is the
+name upper-cased with `-` → `_`. Adding a host means one new variable in the
+secrets file and one new line under `apiKeys` in `llama-swap.yaml`.
+
+**What llama-swap gives you, and what it does not** (checked against its docs and
+source, see [Sources](#sources-for-the-key-handling-facts)):
+
+- `apiKeys` is a flat list of strings; any number of keys; a request is accepted
+  if its key equals any entry. Accepted as `Authorization: Bearer`, `x-api-key`
+  or HTTP Basic.
+- Keys have **no names** inside llama-swap. It does not log, label or count
+  requests per key, so "which consumer is hammering the box?" still has no
+  answer from llama-swap alone. The names above exist only in our two files.
+  (Upstream has an open feature request for per-key attribution.)
+- **All keys are equivalent.** No per-key rate limit, concurrency limit,
+  priority, or permission. `concurrencyLimit` is per model and shared by
+  everyone. Any valid key can also call `/unload`, `/logs` and
+  `/upstream/...` — so the least-trusted consumer's key can still unload the
+  model for everybody. Per-consumer keys buy **revocation**, not least
+  privilege. Upstream's own advice for anything more is a reverse proxy or API
+  gateway in front.
+- `/health` answers without a key. A client that only needs "is the box up?"
+  should probe `/health` and **hold no key at all**; that takes the key off
+  that host's periodic traffic entirely.
+
+**Every change to the key list reloads the model (~13 minutes, every consumer
+down).** There is no way around this with the stack as it is:
+
+- Key values come from the process environment, which is read once, when
+  llama-swap starts. A new or changed value needs a service restart.
+- A config reload (`-watch-config` file change, or `SIGHUP`) does not help: it
+  builds a new server and shuts the old one down, which **stops every model
+  process**; the preload hook then starts the model from cold.
+- A service restart stops the model too, and `ExecStopPost` removes the
+  container.
+
+llama-swap's documentation calls the add-new / move-clients / remove-old
+sequence rotation "without downtime". That is true in the sense that a valid key
+exists throughout; it does not account for a backend that takes 13 minutes to
+come back. On this box each of those two edits is a full reload.
+
+> **`-watch-config` is a live hazard.** The unit runs with it, so *saving*
+> `llama-swap.yaml` on the box triggers a reload — and a model reload — within
+> ~2 s, at a moment you did not choose. Edit the **secrets file** freely (it is
+> only read at start); treat any edit to the YAML as an outage and do it with the
+> service stopped.
+
+**The standby key is what keeps a rotation to one reload instead of two.** It is
+already accepted by llama-swap but deployed nowhere, so "add the new key" has
+been done ahead of time and moving a consumer onto it restarts nothing.
+
+#### Routine rotation of one consumer
+
+The five steps of the classic procedure, and what each costs here:
+
+| Step | Action | Cost |
+|---|---|---|
+| 1. add new | already done — the standby key is live | none |
+| 2. deploy to consumer | give the consumer the standby value | none |
+| 3. verify 200 | from the consumer | none |
+| 4. remove old | promote standby in the secrets file, issue a fresh standby, restart | **~13 min, everyone** |
+| 5. verify 401 | old key rejected, all others still 200 | none |
+
+Steps 1-3 can happen any time. Step 4 is the only outage; schedule it.
+
+```bash
+# --- on the box, in ONE shell you keep open for the whole procedure ---
+# Load the current keys into this shell only. Nothing is printed.
+set -a; . ~/ai-stack/secrets/api-key.env; set +a
+export OLD_KEY="$LLM_KEY_AGENT_HOST1"        # the key being retired (example consumer)
+```
+
+**2. Deploy.** Move the standby value to the consumer over a channel you trust
+(a `0600` file over `scp`, or a password manager) — not chat, not email, not a
+command-line argument. Point the consumer's `$TOKEN` at it.
+
+**3. Verify 200 — from the consumer:**
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' \
+  -H "Authorization: Bearer $TOKEN" http://<spark-ip>:9292/v1/models
+# expect 200
+```
+
+**4. Remove the old key — the outage.** In `~/ai-stack/secrets/api-key.env`:
+set the consumer's variable to the value that was the standby, and set
+`LLM_KEY_STANDBY` to a fresh `openssl rand -hex 32`. The retired value is now
+gone from the file. `llama-swap.yaml` is **not** touched. Then:
+
+```bash
+systemctl --user restart llama-swap.service
+docker logs -f qwen38-flash          # ready at "Application startup complete", ~13 min
+```
+
+**5. Verify 401 for the old key, 200 for everyone else** — same shell as above, so
+`OLD_KEY` still holds the retired value:
+
+```bash
+set -a; . ~/ai-stack/secrets/api-key.env; set +a      # pick up the new values
+scripts/check-keys.sh http://127.0.0.1:9292 \
+  --revoked agent-host1-old=OLD_KEY \
+  agent-host1=LLM_KEY_AGENT_HOST1 dashboard-host1=LLM_KEY_DASHBOARD_HOST1 \
+  webui=LLM_KEY_WEBUI standby=LLM_KEY_STANDBY
+unset OLD_KEY
+```
+
+or by hand, one key at a time:
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' \
+  -H "Authorization: Bearer $OLD_TOKEN" http://<spark-ip>:9292/v1/models
+# expect 401
+```
+
+`scripts/check-keys.sh` never prints a key and hands it to curl on stdin. The
+hand-written `curl -H` form puts the key in that host's process list for the
+life of the request; fine on a single-user machine, avoid it on a shared one.
+
+#### Emergency revocation (a key has leaked)
+
+Do steps 2-3 immediately so the affected consumer keeps working on the standby
+key, then do step 4 **now** rather than at a scheduled window. The leaked key
+stays valid until llama-swap goes down for that restart, and the restart costs
+every consumer ~13 minutes: that is the price of containment on this stack, and
+when to pay it is the operator's call. If the secrets file itself may have been
+read, every key in it is suspect — replace them all in the same single restart.
+
+#### Adding or removing a consumer
+
+This one needs a YAML edit, so stop first and take exactly one reload:
+
+```bash
+systemctl --user stop llama-swap.service
+#  1. add/remove the variable in ~/ai-stack/secrets/api-key.env
+#  2. add/remove the matching line under apiKeys in ~/ai-stack/llama-swap.yaml
+systemctl --user start llama-swap.service
+journalctl --user -u llama-swap.service -n 20     # a missing or empty variable shows up here
+```
+
+If it cannot wait for a window, hand the new consumer the standby key (no
+restart) and make it official — own variable, fresh standby — at the next one.
+
+#### Open WebUI
+
+`bin/run-openwebui.sh` passes `LLM_KEY_WEBUI` into the container. After rotating
+it, re-run the script — and then **check it actually took**: Open WebUI stores
+connection settings in its own database and, by default
+(`ENABLE_PERSISTENT_CONFIG=True`), a value saved there wins over the environment
+variable on later boots. If the UI shows models failing with 401 after a
+rotation, update the key under Admin → Settings → Connections. Verify on the box;
+not tested from this repo.
+
+#### Getting to zero-reload key changes (not done)
+
+Both routes move key checking, or the model's lifecycle, away from the process
+that currently does both. Neither is implemented or tested here.
+
+- **Check keys in a proxy in front of `:9292`.** Its key list reloads without
+  touching llama-swap or the model, and it can also name consumers in access
+  logs and rate-limit them. This is the same component as the TLS terminator in
+  the open [transport decision](#configuration-decisions).
+- **Run vLLM outside llama-swap's lifecycle** (its own unit, reached as a
+  llama-swap `peer`). Restarting llama-swap would then cost seconds. Peer models
+  are addressed as `<peer>/<model>`, so every consumer's model id would change.
+
+#### Sources for the key-handling facts
+
+From `github.com/mostlygeek/llama-swap` at commit `96e6f94` (2026-09-20, after
+release v256). **The release installed on the box was not checked** — confirm it
+with `llama-swap -version` and re-read these if it is much older.
+
+| Fact | Where |
+|---|---|
+| `apiKeys` is `[]string`; empty entry or a space in a key is a load error | `internal/config/config.go:206`, `internal/config/load.go:289-298` |
+| Any matching entry is accepted; 401 otherwise; nothing is logged per key | `internal/server/auth.go:16-41` |
+| No per-key limits, accounts, roles or permissions; use env macros; unset variable fails the load | `docs/kb/guides/api-integration/api-keys-and-auth.md` |
+| Env macros read the process environment (`os.LookupEnv`) | `internal/config/macros.go:475-496` |
+| Reload = build new server, shut down old one | `llama-swap.go:306-390` |
+| Server shutdown stops every model process | `internal/server/server.go:502-536`, `internal/router/base.go:278-306` |
+| `/health` is outside the auth chain; `/unload`, `/logs`, `/upstream` are inside it | `internal/server/server.go:336-375` |
+| Introduced: `apiKeys` v179 (#436); env macros in `apiKeys` v184 (#467); macros in comments no longer expanded v188 (#496); `SIGHUP` reload v205 (#685) | `git tag --contains` on those commits |
+| Open upstream requests: per-key permissions #971, per-key attribution #972, keys from a file #1009 | upstream issue tracker |
+| Open WebUI persistent config precedence | `open-webui/docs`, `docs/reference/env-configuration.mdx` |
 
 ## Known issues and tuning
 
@@ -342,15 +577,18 @@ systemd/llama-swap.service       user unit
 patches/                         our two changes to the upstream recipe
 docs/performance-assessment.md   benchmark results, assessment, tuning and usage advice
 scripts/depth-concurrency.sh     stepped long-context x concurrency test (load test: announce it first)
+scripts/check-keys.sh            read-only: each consumer key gets 200, a wrong key gets 401
 scripts/scrub-paths.sh           strips home paths and private addresses from benchmark logs
 AGENTS.md                        rules for working in this public repo
 .gitleaks.toml, .githooks/       secret + disclosure scanning (docs/secret-scanning.md)
+secrets.env.example              every variable the stack reads, names only (incl. one key per consumer)
 data/endpoint/                   llama-swap and vLLM config/metrics snapshots
 data/benchy/                     raw llama-benchy output for every run
 examples/                        superseded gpt-oss + Muse llama.cpp config
 ```
 
-Secrets live in `~/ai-stack/secrets/api-key.env` and are **not** in this repo.
+Secrets live in `~/ai-stack/secrets/api-key.env` (`0600`, one key per consumer)
+and are **not** in this repo.
 `secrets.env.example` lists every variable the stack reads.
 
 ## Contributing / working in this repo
