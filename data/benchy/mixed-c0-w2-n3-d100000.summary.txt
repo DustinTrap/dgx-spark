@@ -1,0 +1,8 @@
+mixed-workload mixed-c0-w2-n3-d100000   2026-09-21 15:57:29Z   server config: not recorded
+victim    : TTFT 0.29 s, wall 503.65 s, 8192 tokens (usage)
+            alone 31.89 tok/s -> during prefill 0.3 tok/s (1% of baseline, 329.98 s under prefill) -> after 29.05 tok/s
+aggressor 1: start 20.05 s, 96551 prompt tokens, TTFT 85.74 s, effective prefill 1126.04 tok/s
+aggressor 2: start 65.08 s, 96552 prompt tokens, TTFT 114.01 s, effective prefill 846.86 tok/s
+aggressor 3: start 110.06 s, 96548 prompt tokens, TTFT 135.8 s, effective prefill 710.97 tok/s
+probes    : 4 sent, 4 answered, TTFT median 13.77 s, max 13.92 s
+   exit=0 preemptions during run: 0
