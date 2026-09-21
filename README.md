@@ -314,7 +314,10 @@ without touching the others. Names only — values live in
 |---|---|---|
 | `agent-<host>` | coding agents on one operator workstation | `LLM_KEY_AGENT_<HOST>` |
 | `dashboard-<host>` | one always-on dashboard / kiosk client | `LLM_KEY_DASHBOARD_<HOST>` |
+| `cluster-assistant` | an assistant service running in a cluster | `LLM_KEY_CLUSTER_ASSISTANT` |
+| `sandbox-agent` | agent sandboxes running on this box | `LLM_KEY_SANDBOX_AGENT` |
 | `webui` | the Open WebUI container on this box | `LLM_KEY_WEBUI` |
+| `legacy` | the original shared key — **transitional**: kept valid at cutover so no consumer broke; remove at a later planned reload | `LLM_API_KEY` |
 | `standby` | **nobody** — a pre-issued spare, see below | `LLM_KEY_STANDBY` |
 
 One key per host, never one per class shared across hosts. The variable is the

@@ -43,7 +43,7 @@ commits = [
 [[rules]]
 id = "stack-token-assignment"
 description = "Literal value assigned to one of this stack's bearer-token variables"
-regex = '''(?i)\b(?:LLM_API_KEY|OPENAI_API_KEY|ANTHROPIC_AUTH_TOKEN|ANTHROPIC_API_KEY|HF_TOKEN)\b["']?\s*[:=]\s*["']?([A-Za-z0-9_\-+/.]{16,})'''
+regex = '''(?i)\b(?:LLM_API_KEY|LLM_KEY_[A-Z0-9_]+|OPENAI_API_KEY|ANTHROPIC_AUTH_TOKEN|ANTHROPIC_API_KEY|HF_TOKEN)\b["']?\s*[:=]\s*["']?([A-Za-z0-9_\-+/.]{16,})'''
 secretGroup = 1
 keywords = ["llm_api_key", "openai_api_key", "anthropic_auth_token", "anthropic_api_key", "hf_token"]
 tags = ["secret", "bearer"]

@@ -49,8 +49,12 @@ startPort: 10001
 # rotation hand the consumer a key that is ALREADY accepted (no restart), so
 # the only model reload is the one that retires the old key.
 apiKeys:
+  - "${env.LLM_API_KEY}"   # LEGACY shared key - kept valid during migration; remove at a later planned reload
   - "${env.LLM_KEY_AGENT_HOST1}"
   - "${env.LLM_KEY_DASHBOARD_HOST1}"
+  - "${env.LLM_KEY_DASHBOARD_HOST2}"
+  - "${env.LLM_KEY_CLUSTER_ASSISTANT}"
+  - "${env.LLM_KEY_SANDBOX_AGENT}"
   - "${env.LLM_KEY_WEBUI}"
   - "${env.LLM_KEY_STANDBY}"
 
@@ -74,6 +78,11 @@ models:
     # benchmark queueing (docs/performance-assessment.md), not read from
     # serve.sh - if --max-num-seqs there differs, change this to match.
     concurrencyLimit: 8
+    # Scheduler tuning (issue #3), passed to the recipe's serve.sh through its EXTRA
+    # knob so the vendored script stays untouched. Chosen by measurement - see
+    # docs/mixed-workload-plan.md. Changing this line is a ~13-minute model reload.
+    env:
+      - "EXTRA=--scheduling-policy priority --long-prefill-token-threshold 1024"
 
 # No group: with one model there is nothing to swap between, and an exclusive
 # group would only add a way for it to get unloaded.
