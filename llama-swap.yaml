@@ -65,7 +65,7 @@ apiKeys:
 models:
   "qwen3.8-flash-next":
     name: "Qwen3.8-Flash-Next"
-    description: "125B main + 51B n-gram, 6B active, on vLLM. Coding agents."
+    description: "125B main + MTP-2 draft head, 6B active, on vLLM. Coding agents."
     # ${env.HOME} is llama-swap's environment-variable macro (same mechanism as
     # the apiKeys entry above); it keeps an absolute home path out of this file.
     cmd: ${env.HOME}/ai-stack/bin/run-qwen38.sh ${PORT}
@@ -82,11 +82,12 @@ models:
     # benchmark queueing (docs/performance-assessment.md), not read from
     # serve.sh - if --max-num-seqs there differs, change this to match.
     concurrencyLimit: 8
-    # Scheduler tuning (issue #3), passed to the recipe's serve.sh through its EXTRA
+    # Scheduler tuning (issue #3) and cached-token reporting (issue #13: vLLM only emits
+    # usage.prompt_tokens_details.cached_tokens with this flag), passed to the recipe's serve.sh through its EXTRA
     # knob so the vendored script stays untouched. Chosen by measurement - see
     # docs/mixed-workload-plan.md. Changing this line is a ~13-minute model reload.
     env:
-      - "EXTRA=--scheduling-policy priority --long-prefill-token-threshold 1024"
+      - "EXTRA=--scheduling-policy priority --long-prefill-token-threshold 1024 --enable-prompt-tokens-details"
     # vLLM serves exactly one model name. Every alias below is rewritten to it, so
     # the backend never sees an unknown model.
     useModelName: "qwen3.8-flash-next"
