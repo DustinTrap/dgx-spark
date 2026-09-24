@@ -1,0 +1,32 @@
+// Second global config document (OpenCode loads ~/.config/opencode/opencode.jsonc next to
+// opencode.json). v2-only keys live here so opencode.json stays valid against the published
+// schema. Variants put thinking + sampling in the request body: on OpenCode 2.0.11 that is the
+// only client-side path that reaches the wire (agent-level temperature/top_p are not sent).
+// Alternative: declare the llama-swap request-profile aliases (-assistant, -batch, ...) as
+// models and let the server stamp the policy (issue #9 / #14).
+{
+  "providers": {
+    "llama-swap": {
+      "models": {
+        "qwen3.8-flash-next": {
+          "variants": [
+            {
+              "id": "nothink",
+              "body": {
+                "chat_template_kwargs": { "enable_thinking": false },
+                "temperature": 0.7, "top_p": 0.8, "top_k": 20, "min_p": 0, "presence_penalty": 1.0
+              }
+            },
+            {
+              "id": "think",
+              "body": {
+                "chat_template_kwargs": { "enable_thinking": true },
+                "temperature": 1.0, "top_p": 0.95, "top_k": 20, "min_p": 0, "presence_penalty": 0
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}
