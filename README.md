@@ -275,6 +275,12 @@ file that gets synced or committed.
 All four endpoints are live: `/v1/models`, `/v1/chat/completions`,
 `/v1/completions`, `/v1/messages`.
 
+**OpenCode:** a ready-made profile is in [`examples/opencode/`](examples/opencode/) — it fixes
+the client's compaction ceiling (declared 500k context means it otherwise never compacts),
+strips ~8k tokens of auto-discovered skill and browser-catalog text from every turn, and sets
+thinking/sampling through request-body variants, the only client path that reaches the wire
+on 2.0.11. Details and measurements: issue #14.
+
 **Client settings that matter here:** run at most 8 requests at once (1-2 for an
 interactive agent, 4 shared, 8 for batch); set timeouts for prefill, not decode
 (~0.55 s per 1,000 uncached tokens, multiplied by however many requests are

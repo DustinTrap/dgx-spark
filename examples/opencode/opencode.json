@@ -1,0 +1,42 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "llama-swap": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "llama-swap (DGX Spark)",
+      "options": {
+        "baseURL": "http://<spark-ip>:9292/v1",
+        "apiKey": "{file:~/.config/opencode/llama-swap.key}"
+      },
+      "models": {
+        "qwen3.8-flash-next": {
+          "name": "Qwen3.8-Flash-Next",
+          "tool_call": true,
+          "limit": { "context": 500000, "output": 32768 }
+        }
+      }
+    }
+  },
+  "model": "llama-swap/qwen3.8-flash-next",
+  "small_model": "llama-swap/qwen3.8-flash-next",
+  "compaction": { "auto": true, "reserved": 360000, "preserve_recent_tokens": 25000 },
+  "tool_output": { "max_lines": 800, "max_bytes": 24576 },
+  "permission": { "skill": { "*": "deny" } },
+  "tools": { "execute": false },
+  "agent": {
+    "build": {
+      "permission": { "subagent": { "*": "deny", "explore": "allow", "general": "allow", "reviewer": "allow" } }
+    },
+    "reviewer": {
+      "description": "Use proactively for adversarial review, security pass, or audit of any diff, PR, or set of files. Read-only. Returns numbered findings with file:line and a verdict per finding.",
+      "mode": "subagent",
+      "model": "llama-swap/qwen3.8-flash-next",
+      "variant": "nothink",
+      "permission": {
+        "edit": "deny",
+        "subagent": "deny",
+        "bash": { "*": "deny", "git diff*": "allow", "git log*": "allow", "git show*": "allow", "git status*": "allow" }
+      }
+    }
+  }
+}
