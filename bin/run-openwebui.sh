@@ -16,7 +16,7 @@ export OPENAI_API_KEY="$LLM_KEY_WEBUI"
 
 docker rm -f "$NAME" >/dev/null 2>&1 || true
 
-exec docker run -d --name "$NAME" \
+docker run -d --name "$NAME" \
   --restart unless-stopped \
   -p 3000:8080 \
   --add-host=host.docker.internal:host-gateway \
@@ -27,3 +27,11 @@ exec docker run -d --name "$NAME" \
   --env "ENABLE_TAGS_GENERATION=false" \
   --env "WEBUI_NAME=Spark" \
   ghcr.io/open-webui/open-webui:main
+
+# Second network: reach the add-on containers (SearXNG, bin/run-searxng.sh) by
+# name. It is joined after creation, so the primary network stays the default
+# bridge and the path to llama-swap through the host gateway, and the ufw rule
+# that admits it, are unchanged.
+ADDONS_NET=webui-addons
+docker network inspect "$ADDONS_NET" >/dev/null 2>&1 || docker network create "$ADDONS_NET" >/dev/null
+docker network connect "$ADDONS_NET" "$NAME"

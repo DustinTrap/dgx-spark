@@ -1,0 +1,19 @@
+# SearXNG, the search engine behind Open WebUI's web search.
+# bin/run-searxng.sh mounts this file read-only from ~/ai-stack/searxng/.
+# Only the differences from SearXNG's own defaults are listed here.
+use_default_settings: true
+
+server:
+  # secret_key is not set here: bin/run-searxng.sh passes a fresh one in
+  # SEARXNG_SECRET on every start, so there is nothing to store or commit.
+  # The bot limiter is for public instances. This one publishes no port and its
+  # only client is Open WebUI, so it would only throttle the web UI.
+  limiter: false
+  public_instance: false
+  image_proxy: false
+
+search:
+  formats:
+    - html
+    # Open WebUI queries /search?format=json; SearXNG answers 403 without this.
+    - json

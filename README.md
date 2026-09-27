@@ -579,6 +579,63 @@ Re-read them after upgrading llama-swap.
 | Open upstream requests: per-key permissions #971, per-key attribution #972, keys from a file #1009 | upstream issue tracker |
 | Open WebUI persistent config precedence | `open-webui/docs`, `docs/reference/env-configuration.mdx` |
 
+### Open WebUI: web search and sub-agents
+
+Tracked in #17. Both are Open WebUI settings plus one extra container. Neither touches
+llama-swap, the model or ufw.
+
+**Web search runs through a self-hosted SearXNG.** `bin/run-searxng.sh` starts it (image
+tag pinned in the script) on a user-defined Docker network, `webui-addons`, with **no
+published port**. Only containers on that network can reach it, so nothing new is open
+to the LAN. Open WebUI joins `webui-addons` as a *second* network after it is created
+(`bin/run-openwebui.sh`). Its primary network is still the default bridge, so its path
+to `:9292` through the host gateway, and the ufw rule that admits it, are unchanged.
+`searxng/settings.yml` enables the `json` output Open WebUI asks for and turns off the
+bot limiter, which is meant for public instances. The SearXNG secret is generated on
+every start and never stored.
+
+**The settings live in Open WebUI's database**, like the connection key above, so
+`bin/openwebui-settings.sh` writes them into the running container and prints each value
+before and after:
+
+| Setting | Value | Why |
+|---|---|---|
+| `web.search.enable`, `engine`, `searxng_query_url` | on, `searxng`, `http://searxng:8080/search` | users already hold the web-search permission; it did nothing without an engine |
+| `web.fetch.max_content_length` | 20,000 characters (default: unlimited) | caps how much one `fetch_url` call can add to a prompt on the shared model |
+| `subagents.max_concurrent` | 2 (default 20) | the endpoint runs 8 sequences (`concurrencyLimit: 8`) |
+| `subagents.max_async` | 1 (default 20) | background sub-agents have their own budget, which adds to the one above |
+
+With these, sub-agents can hold at most 3 of the 8 slots. The web search result count
+stays at 3, and retrieval stays on (not bypassed), so only the best-matching chunks of
+each page reach the prompt. Turning web search on also enables the built-in `search_web`
+and `fetch_url` tools for native function calling (the 0.11 default). `fetch_url` goes
+through Open WebUI's URL check, which refuses private addresses unless
+`ENABLE_RAG_LOCAL_WEB_FETCH` is set.
+
+Open WebUI 0.11 reads these rows on every use, so no restart is needed, with one
+exception. The foreground sub-agent limit is fixed when the process runs its first
+foreground sub-agent (`utils/subagents.py`). If one has run since the container started,
+the script says so, and the new limit applies after `docker restart open-webui`.
+
+```bash
+# on the box, from a checkout of this repo
+mkdir -p ~/ai-stack/searxng
+cp searxng/settings.yml ~/ai-stack/searxng/
+cp bin/run-searxng.sh bin/run-openwebui.sh bin/openwebui-settings.sh ~/ai-stack/bin/
+~/ai-stack/bin/run-searxng.sh          # also connects a running open-webui to the network
+~/ai-stack/bin/openwebui-settings.sh   # prints every value before -> after
+
+# check: SearXNG answers Open WebUI, and the model connection still works
+docker exec open-webui python3 -c 'import json, urllib.request as u
+r = json.load(u.urlopen("http://searxng:8080/search?q=test&format=json", timeout=30))
+print(len(r["results"]), "results")'
+```
+
+Undo: set `web.search.enable` to off in Admin -> Settings -> Web Search, then
+`docker rm -f -v searxng`, `docker network disconnect webui-addons open-webui` and
+`docker network rm webui-addons`. Sub-agent limits: Admin -> Settings, or put both rows
+back to 20.
+
 ## Known issues and tuning
 
 **A long prefill still slows everyone else's decode - but no longer stalls them.** As found
@@ -653,6 +710,9 @@ Glimmer behind an exclusive llama-swap group) for reference.
 llama-swap.yaml                  Qwen3.8 only, preloaded, never unloaded
 bin/run-qwen38.sh                wrapper over upstream serve.sh for llama-swap
 bin/run-openwebui.sh             Open WebUI pointed at llama-swap
+bin/run-searxng.sh               SearXNG for Open WebUI web search, no published port
+bin/openwebui-settings.sh        Open WebUI settings kept in its database (web search, sub-agent limits)
+searxng/settings.yml             SearXNG settings: json output on, bot limiter off
 bin/privileged-setup.sh          linger, ufw rules, Docker bridge access
 bin/enable-firewall.sh           enables ufw without locking out SSH
 systemd/llama-swap.service       user unit
