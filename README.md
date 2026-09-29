@@ -636,6 +636,43 @@ Undo: set `web.search.enable` to off in Admin -> Settings -> Web Search, then
 `docker network rm webui-addons`. Sub-agent limits: Admin -> Settings, or put both rows
 back to 20.
 
+### Removing images from the box
+
+Other solutions on this box use some of its Docker images, and **plain `docker images` does not
+show them**. It hides untagged images; `docker images -a` listed 6 of them on 2026-09-28, all
+still in use. `docker image prune -a` or `docker system prune` would delete them, so never run
+either here. Remove images one at a time, by name, with `scripts/remove-image.sh`. It refuses
+an image that any container (running or stopped) uses. It waits until llama-swap is healthy
+and vLLM's stats show at most 1 running request and no prompt throughput. Then it removes
+the image and samples I/O and memory pressure and vLLM throughput for 5 minutes. Remove the
+smallest image first as a canary, read its log, then do the next.
+
+```bash
+# on the box; DRY_RUN=1 checks the image and the gate and removes nothing
+setsid nohup scripts/remove-image.sh IMAGE \
+  > ~/ai-stack/changes/image-removal-$(date -u +%Y%m%d-%H%MZ).log 2>&1 < /dev/null &
+```
+
+Run it detached. Once, a client's SSH session dropped mid-run.
+
+Measured 2026-09-28 (#21). The source is the logs `image-removal-ollama-20260928-1937Z.log` and
+`image-removal-sglang-20260928-2250Z.log` in `~/ai-stack/changes/`. They were written by the
+first version of this script, which is kept beside them as `rm-image-20260928.sh`:
+
+| Image | Freed | `docker image rm` | I/O pressure (some avg10), before -> after | Serving during the 5 min after |
+|---|---|---|---|---|
+| `open-webui:ollama` (canary) | 6.70 GB | 2.9 s | 0.18% -> 0.00-0.14% | 0-2 running; 54-69 tok/s generation with 2 running; `/health` 200 |
+| `lmsysorg/sglang:spark` | 25.11 GB | 7.5 s | 0.51% -> 0.00-0.45% | 0-1 running; 25-40 tok/s generation with 1 running; `/health` 200 |
+
+The two removals freed 31.80 GB of image storage in total (`docker system df`: 82.59 GB ->
+50.79 GB). No container restarted. Neither run shows a measurable effect on serving, but both
+ran at low load: at most 2 requests were running during either one.
+
+Nothing on the box reads this repo's checkout. llama-swap polls only the file passed as its
+`-config` (`~/ai-stack/llama-swap.yaml`), and no unit, cron job or container mount points
+into the checkout (checked 2026-09-28, #21). So git operations there cannot reload the
+model. Copying a changed `llama-swap.yaml` over the deployed one can.
+
 ## Known issues and tuning
 
 **A long prefill still slows everyone else's decode - but no longer stalls them.** As found
@@ -680,7 +717,9 @@ after loading safetensors shards, before KV allocation. Exhausted 121 GiB and al
 16 GiB of swap, twice, at default `mem-fraction` and at 0.75. Stalls at the
 identical point both times, so mem-fraction is not the lever.
 [`sgl-project/sglang#13382`](https://github.com/sgl-project/sglang/issues/13382),
-same hardware, unresolved.
+same hardware, unresolved. The image was removed from the box on 2026-09-28 (#21).
+To try again, re-pull `lmsysorg/sglang@sha256:16dec654b13e4d10a2d9eefa0560e85fed0d1fc9536986e1dfb1bcb0077cbc7a`;
+whether the registry still serves that digest was not checked.
 
 **llama.cpp with the Ollama GGUF blob** — Ollama writes its own architecture
 name (`gptoss`) into the header; upstream llama.cpp rejects it with
@@ -721,6 +760,7 @@ docs/performance-assessment.md   benchmark results, assessment, tuning and usage
 scripts/depth-concurrency.sh     stepped long-context x concurrency test (load test: announce it first)
 scripts/check-keys.sh            read-only: each consumer key gets 200, a wrong key gets 401
 scripts/scrub-paths.sh           strips home paths and private addresses from benchmark logs
+scripts/remove-image.sh          removes one unused image by name, only while the endpoint is quiet, and samples the effect
 AGENTS.md                        rules for working in this public repo
 .gitleaks.toml, .githooks/       secret + disclosure scanning (docs/secret-scanning.md)
 secrets.env.example              every variable the stack reads, names only (incl. one key per consumer)
