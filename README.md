@@ -348,6 +348,18 @@ curl -s -H "Authorization: Bearer $TOKEN" \
 `/metrics` and `/v1/models` can take over 10 s to answer while a long prefill is
 running. Give health checks and monitors a generous timeout.
 
+A client cannot see the other consumers' requests, only its own. Before a fan-out,
+`scripts/wait-for-slot.sh` reads `vllm:num_requests_running` and
+`vllm:num_requests_waiting` from the metrics endpoint above and returns once there
+is room for the requests you are about to start (issue #23):
+
+```bash
+scripts/wait-for-slot.sh --need 3 --key-file ~/.config/opencode/llama-swap.key http://<spark-ip>:9292
+```
+
+It is read-only and advisory: two clients can take the same free slot.
+`concurrencyLimit` in `llama-swap.yaml` stays the hard limit.
+
 ### Keys and rotation
 
 Every consumer holds **its own** bearer key, so one consumer can be revoked
@@ -759,6 +771,7 @@ patches/                         our two changes to the upstream recipe
 docs/performance-assessment.md   benchmark results, assessment, tuning and usage advice
 scripts/depth-concurrency.sh     stepped long-context x concurrency test (load test: announce it first)
 scripts/check-keys.sh            read-only: each consumer key gets 200, a wrong key gets 401
+scripts/wait-for-slot.sh         read-only: waits until the endpoint has room for N more requests (client-side gate)
 scripts/scrub-paths.sh           strips home paths and private addresses from benchmark logs
 scripts/remove-image.sh          removes one unused image by name, only while the endpoint is quiet, and samples the effect
 AGENTS.md                        rules for working in this public repo
