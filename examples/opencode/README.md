@@ -19,4 +19,14 @@ Copy the three files into `~/.config/opencode/` (issue #14 has the measurements 
 exec ~/src/dgx-spark/scripts/wait-for-slot.sh --key-file ~/.config/opencode/llama-swap.key "$@" http://<spark-ip>:9292
 ```
 
+Checked 2026-10-05 (issue #25) with OpenCode 2.0.23, these files, the `#high` variant and `opencode run --standalone --auto --format json` on a prompt that names three independent files, one run per case. With room, the model ran `wait-for-slot --check --need 3` first and then launched three sub-agents in one turn, which ran in parallel. With a stub `wait-for-slot` first on `PATH` that exits 1, it launched them one at a time and told the user why. One run each, so the model's choice can still vary. To repeat the busy case without loading the endpoint, run this in a scratch directory (`--standalone` matters: the background service has its own `PATH`):
+
+```bash
+mkdir -p /tmp/busy-gate
+printf '#!/usr/bin/env bash\necho "busy: running=6 waiting=1 need=3 limit=6" >&2\nexit 1\n' >/tmp/busy-gate/wait-for-slot
+chmod +x /tmp/busy-gate/wait-for-slot
+PATH=/tmp/busy-gate:$PATH opencode run --standalone --auto --format json \
+  "This directory has three independent files: a.txt, b.txt and c.txt. Treat each file as a separate part and report its line count."
+```
+
 Check the client log after any config change: a key that validates against the schema can still be dropped at load time (`configuration normalization diagnostic … omitted unsupported legacy setting`).

@@ -359,6 +359,8 @@ scripts/wait-for-slot.sh --need 3 --key-file ~/.config/opencode/llama-swap.key h
 
 It is read-only and advisory: two clients can take the same free slot.
 `concurrencyLimit` in `llama-swap.yaml` stays the hard limit.
+`tests/test-wait-for-slot.sh` checks it against a local mock of the metrics
+endpoint; no traffic leaves 127.0.0.1 (issue #25).
 
 ### Keys and rotation
 
@@ -774,6 +776,7 @@ scripts/check-keys.sh            read-only: each consumer key gets 200, a wrong 
 scripts/wait-for-slot.sh         read-only: waits until the endpoint has room for N more requests (client-side gate)
 scripts/scrub-paths.sh           strips home paths and private addresses from benchmark logs
 scripts/remove-image.sh          removes one unused image by name, only while the endpoint is quiet, and samples the effect
+tests/test-wait-for-slot.sh      runs wait-for-slot.sh against a local mock metrics server (tests/mock_metrics.py)
 AGENTS.md                        rules for working in this public repo
 .gitleaks.toml, .githooks/       secret + disclosure scanning (docs/secret-scanning.md)
 secrets.env.example              every variable the stack reads, names only (incl. one key per consumer)
