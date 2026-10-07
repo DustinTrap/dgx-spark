@@ -598,6 +598,33 @@ Re-read them after upgrading llama-swap.
 Tracked in #17. Both are Open WebUI settings plus one extra container. Neither touches
 llama-swap, the model or ufw.
 
+**A second connection goes to the LiteLLM gateway on the lab cluster** (added 2026-10-06; the
+gateway is in the homelab repo, `litellm/`). It offers `auto-local` (the 4090 for simple asks,
+this box's model for the rest; never the paid tier), `dgx` and `small`, under a virtual key of
+its own (`webui-dgx`, issued by the gateway, exempt from the gateway's content rules). The
+connection and its key are persisted in Open WebUI's database like the first one, written from
+the box with the key passed by variable name, never on a command line. The gateway is HTTPS
+with the lab's own certificate, and Open WebUI's `AIOHTTP_CLIENT_SSL_CERT_FILE` *replaces* the
+default CA bundle, so `bin/run-openwebui.sh` mounts `~/ai-stack/certs/sno-lab-bundle.pem`: the
+container's public CAs plus that certificate. When the ingress certificate rotates, rebuild
+the bundle and recreate the container, or the gateway connection fails TLS and its three
+models silently drop out of the picker:
+
+```bash
+docker exec open-webui cat /usr/lib/ssl/cert.pem > ~/ai-stack/certs/sno-lab-bundle.pem
+cat <ingress-cert.pem> >> ~/ai-stack/certs/sno-lab-bundle.pem      # the *.apps.sno-lab.lab certificate
+~/ai-stack/bin/run-openwebui.sh
+# check from inside: the persisted gateway key lists exactly auto-local, dgx, small
+docker exec open-webui python3 -c 'import ssl, json, sqlite3, urllib.request as u
+db = sqlite3.connect("/app/backend/data/webui.db", timeout=30)
+urls = json.loads(db.execute("select value from config where key=?", ("openai.api_base_urls",)).fetchone()[0])
+keys = json.loads(db.execute("select value from config where key=?", ("openai.api_keys",)).fetchone()[0])
+i = urls.index("https://litellm.apps.sno-lab.lab/v1")
+ctx = ssl.create_default_context(cafile="/etc/ssl/sno-lab-bundle.pem")
+r = u.urlopen(u.Request(urls[i] + "/models", headers={"Authorization": "Bearer " + keys[i]}), context=ctx)
+print(r.status, sorted(m["id"] for m in json.load(r)["data"]))'
+```
+
 **Web search runs through a self-hosted SearXNG.** `bin/run-searxng.sh` starts it (image
 tag pinned in the script) on a user-defined Docker network, `webui-addons`, with **no
 published port**. Only containers on that network can reach it, so nothing new is open
