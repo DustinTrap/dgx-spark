@@ -1,0 +1,6 @@
+{"size": 2000, "rep": 0, "prompt_tokens": 1597, "ttft_s": 1.67, "prefill_tps": 957, "decode_tps": 28.8}
+{"size": 2000, "rep": 1, "prompt_tokens": 1595, "ttft_s": 1.27, "prefill_tps": 1257, "decode_tps": 30.4}
+{"size": 2000, "rep": 2, "prompt_tokens": 1597, "ttft_s": 1.28, "prefill_tps": 1248, "decode_tps": 31.6}
+{"size": 32000, "rep": 0, "prompt_tokens": 25209, "ttft_s": 20.8, "prefill_tps": 1212, "decode_tps": 31.6}
+{"size": 32000, "rep": 1, "prompt_tokens": 25205, "ttft_s": 18.55, "prefill_tps": 1359, "decode_tps": 31.9}
+{"size": 32000, "rep": 2, "prompt_tokens": 25208, "ttft_s": 18.5, "prefill_tps": 1363, "decode_tps": 32.0}

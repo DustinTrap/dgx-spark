@@ -1,0 +1,390 @@
+{
+ "python": "3.14.6",
+ "docs": [
+  {
+   "id": "short-00",
+   "bucket": "short",
+   "sources": [
+    "repo/AGENTS.md"
+   ],
+   "chars": 4243,
+   "sha256": "1de176fe8e0aeb57e6367dd504e5a22f9099c7689d2f484098094c3329348506"
+  },
+  {
+   "id": "short-01",
+   "bucket": "short",
+   "sources": [
+    "repo/scripts/depth-concurrency.sh"
+   ],
+   "chars": 4319,
+   "sha256": "92a35dc7c835e5c6bbb670b24d80e49d488b81a5b77e99d4bedd42a1adfb93d3"
+  },
+  {
+   "id": "short-02",
+   "bucket": "short",
+   "sources": [
+    "repo/scripts/wait-for-slot.sh"
+   ],
+   "chars": 8198,
+   "sha256": "6bd658e641ba14bc26c3c32874c48009366f1712fc08b74af38047c9006b092c"
+  },
+  {
+   "id": "short-03",
+   "bucket": "short",
+   "sources": [
+    "repo/llama-swap.yaml"
+   ],
+   "chars": 6719,
+   "sha256": "323fbe9897edf5505dc03137dc5532ac00fa111aaaa767e8f6e8e77879a7790d"
+  },
+  {
+   "id": "medium-04",
+   "bucket": "medium",
+   "sources": [
+    "repo/README.md"
+   ],
+   "chars": 43505,
+   "sha256": "99750609a4fff4a8ccc15c650f6a1e4af5778b55a1e95bc71382a4a88e1f813a"
+  },
+  {
+   "id": "medium-05",
+   "bucket": "medium",
+   "sources": [
+    "repo/docs/performance-assessment.md"
+   ],
+   "chars": 17330,
+   "sha256": "7abdaf027191412ab38eba548a6ced44dd5686229a6cbab5810016fc3ec60d3b"
+  },
+  {
+   "id": "medium-06",
+   "bucket": "medium",
+   "sources": [
+    "repo/docs/mixed-workload-plan.md"
+   ],
+   "chars": 33977,
+   "sha256": "3b49ecfe8b1f2ddaa3267cc91822900d21dec5d570bdddbacdf067b1e0782c25"
+  },
+  {
+   "id": "medium-07",
+   "bucket": "medium",
+   "sources": [
+    "repo/scripts/mixed-workload.sh"
+   ],
+   "chars": 31066,
+   "sha256": "09231d38e1e5240427adb1c174140ace019ea61b616b080474b7689520d67cea"
+  },
+  {
+   "id": "short-08",
+   "bucket": "short",
+   "sources": [
+    "stdlib/__future__.py"
+   ],
+   "chars": 5218,
+   "sha256": "981d4c398849f9ebcab72300d9c1fe288fd6d7f28957b3b3fa3a493a5836d95c"
+  },
+  {
+   "id": "short-09",
+   "bucket": "short",
+   "sources": [
+    "stdlib/_aix_support.py"
+   ],
+   "chars": 4021,
+   "sha256": "0982f187c62fbfc1e8d368c8eb4104b56df71009a6b2823565a699e7b4cd945c"
+  },
+  {
+   "id": "short-10",
+   "bucket": "short",
+   "sources": [
+    "stdlib/_android_support.py"
+   ],
+   "chars": 7417,
+   "sha256": "2892865f6914f27885d4290d71690336f13210fb1465ae7e47ae1cb3e13c0a5e"
+  },
+  {
+   "id": "short-11",
+   "bucket": "short",
+   "sources": [
+    "stdlib/_colorize.py"
+   ],
+   "chars": 11031,
+   "sha256": "15db41bec8e25fd1ba81cf234df2cc7446d0fbc10285fda73186176365efd730"
+  },
+  {
+   "id": "short-12",
+   "bucket": "short",
+   "sources": [
+    "stdlib/_compat_pickle.py"
+   ],
+   "chars": 8735,
+   "sha256": "028d2d9845d7acac2e1ceb565aacaee64e3f8019fba96174d65eff1609b50cd0"
+  },
+  {
+   "id": "short-13",
+   "bucket": "short",
+   "sources": [
+    "stdlib/_opcode_metadata.py"
+   ],
+   "chars": 10115,
+   "sha256": "d9badc5ab19a66415e230bf8f4299491b2207d584981a92b6e7c447cfa1aeac3"
+  },
+  {
+   "id": "short-14",
+   "bucket": "short",
+   "sources": [
+    "stdlib/_py_abc.py"
+   ],
+   "chars": 6189,
+   "sha256": "f9c6fe3dd9b51bd7d93f867356e9d362600c924febfd903ee1c6e298860dca92"
+  },
+  {
+   "id": "short-15",
+   "bucket": "short",
+   "sources": [
+    "stdlib/_threading_local.py"
+   ],
+   "chars": 4363,
+   "sha256": "c28a8fee862741e9173f5a76f0c680761b5f61e1dd9f2ca479b02c69c9ada4e7"
+  },
+  {
+   "id": "short-16",
+   "bucket": "short",
+   "sources": [
+    "stdlib/_weakrefset.py"
+   ],
+   "chars": 3962,
+   "sha256": "2dd7cb459d654fe78b00c5c47ee8e786c037ee77763304603f5e976dd62cbf81"
+  },
+  {
+   "id": "short-17",
+   "bucket": "short",
+   "sources": [
+    "stdlib/abc.py"
+   ],
+   "chars": 6538,
+   "sha256": "e558702a95cdce3febd289da021715d2b92bc43995b8a1bc58dfa1c3d8010287"
+  },
+  {
+   "id": "short-18",
+   "bucket": "short",
+   "sources": [
+    "stdlib/bz2.py"
+   ],
+   "chars": 11978,
+   "sha256": "368b9ee55f0b6dbfc81b15e1a17c51cccddb009389eae8e9a7acf2402ca4109a"
+  },
+  {
+   "id": "short-19",
+   "bucket": "short",
+   "sources": [
+    "stdlib/cProfile.py"
+   ],
+   "chars": 7122,
+   "sha256": "4349fe3dba56e2636cee1ce4038baac7988104986c96be808b62bb46939ad7bf"
+  },
+  {
+   "id": "short-20",
+   "bucket": "short",
+   "sources": [
+    "stdlib/codeop.py"
+   ],
+   "chars": 5902,
+   "sha256": "6777d19fa0f88c415d615c78e214ede057dd7507db8494744ca2c53fe9911a3a"
+  },
+  {
+   "id": "short-21",
+   "bucket": "short",
+   "sources": [
+    "stdlib/colorsys.py"
+   ],
+   "chars": 4062,
+   "sha256": "65e3dfbf7bad61d4d7d7731a69dd7e75a347fd350d91327a51010a94e6fd2f1d"
+  },
+  {
+   "id": "short-22",
+   "bucket": "short",
+   "sources": [
+    "stdlib/copy.py"
+   ],
+   "chars": 8582,
+   "sha256": "15154fde290d6e65b5007905689a47a9a5a724822c5e06eec35d9ffbb2a3aa69"
+  },
+  {
+   "id": "short-23",
+   "bucket": "short",
+   "sources": [
+    "stdlib/copyreg.py"
+   ],
+   "chars": 7716,
+   "sha256": "6376eb5722806396f5842997ac18add369ea9ac3ff4fcfe1460c41a088cac425"
+  },
+  {
+   "id": "medium-24",
+   "bucket": "medium",
+   "sources": [
+    "stdlib/_ast_unparse.py"
+   ],
+   "chars": 40422,
+   "sha256": "2c477f40fe644f8e8454e8af97aaf3de90579bdce5ddfe597f29d3012d10443f"
+  },
+  {
+   "id": "medium-25",
+   "bucket": "medium",
+   "sources": [
+    "stdlib/_collections_abc.py"
+   ],
+   "chars": 32147,
+   "sha256": "50b68b76687edc29824e5d735914b9c9ebb5145b663ba4ab7fce273283356a1c"
+  },
+  {
+   "id": "medium-26",
+   "bucket": "medium",
+   "sources": [
+    "stdlib/_markupbase.py"
+   ],
+   "chars": 14695,
+   "sha256": "01046da4883344a898fb1261a0805a7ab1bae371e95ade31311ac03b43b33c98"
+  },
+  {
+   "id": "medium-27",
+   "bucket": "medium",
+   "sources": [
+    "stdlib/_osx_support.py"
+   ],
+   "chars": 22023,
+   "sha256": "363d3240acbba18a270bd3161f1ddb478f8492dc14fc451b2dc314db5c5ee09c"
+  },
+  {
+   "id": "medium-28",
+   "bucket": "medium",
+   "sources": [
+    "stdlib/_py_warnings.py"
+   ],
+   "chars": 30631,
+   "sha256": "7728580177727fa3b295478cef4777a9d2a364c5cbd809efcea352db31144f85"
+  },
+  {
+   "id": "medium-29",
+   "bucket": "medium",
+   "sources": [
+    "stdlib/_pylong.py"
+   ],
+   "chars": 28356,
+   "sha256": "3c82c3d1f8ed6058fc9b2c1362634d6fdfb8db9db207a980f702fedde5cb93ff"
+  },
+  {
+   "id": "medium-30",
+   "bucket": "medium",
+   "sources": [
+    "stdlib/_strptime.py"
+   ],
+   "chars": 35413,
+   "sha256": "3283216b39dc619ad1b0c0ccbed0c6a13c69884177e8032211087736fedacf4d"
+  },
+  {
+   "id": "medium-31",
+   "bucket": "medium",
+   "sources": [
+    "stdlib/annotationlib.py"
+   ],
+   "chars": 44420,
+   "sha256": "1cce29393714b91e3f71571ffbedacc7f73f11ad26be10701debeb86ec059a32"
+  },
+  {
+   "id": "medium-32",
+   "bucket": "medium",
+   "sources": [
+    "stdlib/ast.py"
+   ],
+   "chars": 25479,
+   "sha256": "5ea9a796353544bea0d706153516f04ef3d92be305d15a73238403837d77e34c"
+  },
+  {
+   "id": "medium-33",
+   "bucket": "medium",
+   "sources": [
+    "stdlib/base64.py"
+   ],
+   "chars": 22301,
+   "sha256": "53db802f9f743cda75eac18bcc4e48ac570574fc1864417441f370fb2a79cb34"
+  },
+  {
+   "id": "medium-34",
+   "bucket": "medium",
+   "sources": [
+    "stdlib/bdb.py"
+   ],
+   "chars": 44829,
+   "sha256": "ed54964aed0bb23931265607c3ef1e38ec09ccb681d298fd1b56e5ac1cd4223c"
+  },
+  {
+   "id": "medium-35",
+   "bucket": "medium",
+   "sources": [
+    "stdlib/calendar.py"
+   ],
+   "chars": 29863,
+   "sha256": "071c962f9000d42c565b92bae4063e1b7f615ae2db4f574e7c682c41f99c5146"
+  },
+  {
+   "id": "long-36",
+   "bucket": "long",
+   "sources": [
+    "stdlib/_pydatetime.py"
+   ],
+   "chars": 95552,
+   "sha256": "857614171f3f86ca724348c5cff474301c56e5ac69aaccafbaa7ddb01e23d7e1"
+  },
+  {
+   "id": "long-37",
+   "bucket": "long",
+   "sources": [
+    "stdlib/_pydecimal.py"
+   ],
+   "chars": 229347,
+   "sha256": "920ffd56675c8a1158482d3992412d98c5860921c1cf055af1ae3cd87cf9c6ba"
+  },
+  {
+   "id": "long-38",
+   "bucket": "long",
+   "sources": [
+    "stdlib/_pyio.py",
+    "stdlib/_sysconfigdata__darwin_darwin.py"
+   ],
+   "chars": 150987,
+   "sha256": "2d1409bb60b65e8dd075916bb6390feaa301e000fb4566e3208407cb9fe30d52"
+  },
+  {
+   "id": "long-39",
+   "bucket": "long",
+   "sources": [
+    "stdlib/argparse.py",
+    "stdlib/codecs.py"
+   ],
+   "chars": 143561,
+   "sha256": "d1142c893d8ea82498df2614a824d779b948fe77978b4f26a427682d26246c44"
+  },
+  {
+   "id": "long-40",
+   "bucket": "long",
+   "sources": [
+    "stdlib/compileall.py",
+    "stdlib/configparser.py",
+    "stdlib/contextlib.py",
+    "stdlib/dataclasses.py"
+   ],
+   "chars": 175745,
+   "sha256": "7d831cc1d93eb30d547cdb34e7dce30e34ad1b2645cb3ec4769a9e67a271b681"
+  },
+  {
+   "id": "long-41",
+   "bucket": "long",
+   "sources": [
+    "stdlib/difflib.py",
+    "stdlib/dis.py",
+    "stdlib/doctest.py"
+   ],
+   "chars": 239138,
+   "sha256": "2ed3194246665885427c226f0dd06a30f2535a02f76391c207a49ed03765c159"
+  }
+ ]
+}

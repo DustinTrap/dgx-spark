@@ -56,7 +56,7 @@ dense model of comparable quality would run several times slower.
 | Checkpoint | [`nvidia/Qwen3.8-Flash-Next-NVFP4`](https://huggingface.co/nvidia/Qwen3.8-Flash-Next-NVFP4) (132.7 GB, 11 shards) |
 | Layout served | `-fp8hybrid` — NVFP4 experts + blockwise-fp8 side layers |
 | Architecture | `qwen4exp`; 3:1 Gated DeltaNet to Qwen Sparse Attention, 512 experts (10 routed + 1 shared) |
-| Context | 262,144 native, **500,000 served** via YaRN factor 4 |
+| Context | **262,144 served, native** (no YaRN since 2026-10-17, issue #30; was 500,000 via YaRN factor 4) |
 | Quality | SWE-bench Pro 62.5, SWE-bench Multilingual 81.0, LiveCodeBench v6 91.9 |
 
 The hybrid layout is produced locally by `prepare-hybrid.sh`: 1,836 side-layer
@@ -203,6 +203,16 @@ or the memory-profiling run. 1024 was chosen by measurement over 256 (see Known 
 Priority scheduling is inert until a client sends a non-zero `priority`; llama-swap forwards
 the field unchanged. If the server is ever rolled back to `fcfs`, clients must stop sending it.
 
+**Native 262,144 context, no YaRN** (since 2026-10-17, issue #30). vLLM applied YaRN factor 4
+to every request, however short, to reach 500k. Measured on a fixed 42-document corpus,
+turning it off lowered teacher-forced NLL by 2.16% (34/42 documents better, sign test
+p = 6.9e-5; the same corpus re-scored on the same server moved 0.00%). HumanEval, a 108-request
+tool-call suite and a 167k needle showed no regression. The cost: prompts over 262,144 tokens now
+get a 400. The old window did retrieve a needle at 297k, and 9 of 12,351 prompts in the 10 days
+before were over 200k. Method, numbers and what was not verified:
+[docs/quality-ab-2026-10-17.md](docs/quality-ab-2026-10-17.md); the scripts are in
+`scripts/quality/`.
+
 **`GPU_MEM=0.80`** — upstream's value. 0.85 drifted into swap after a day; 0.875
 was OOM-killed on a long prefill.
 
@@ -276,8 +286,8 @@ All four endpoints are live: `/v1/models`, `/v1/chat/completions`,
 `/v1/completions`, `/v1/messages`.
 
 **OpenCode:** a ready-made profile is in [`examples/opencode/`](examples/opencode/) — it fixes
-the client's compaction ceiling (declared 500k context means it otherwise never compacts),
-strips ~8k tokens of auto-discovered skill and browser-catalog text from every turn, and sets
+the client's compaction ceiling (context and `compaction.reserved` must change together),
+replays earlier reasoning under the field name that survives a gateway (`reasoning`), strips ~8k tokens of auto-discovered skill and browser-catalog text from every turn, and sets
 thinking/sampling through request-body variants, the only client path that reaches the wire
 on 2.0.11. Details and measurements: issue #14.
 
@@ -715,8 +725,8 @@ Plan on ~380k tokens of context in flight, not 721k.
 **Page cache starvation.** With `GPU_MEM=0.80` the box runs at ~114 GiB used and
 only ~3 GiB of page cache for a 47.7 GiB mmap'd table, so PLE gathers cost
 4.7-9.3 ms per op against a ~25 ms decode step. The KV pool holds 721k tokens for
-what is effectively a single user. Lowering `GPU_MEM` to ~0.72 and `CTX` to the
-native 262,144 would trade unused KV for page cache. Untested here - and check
+what is effectively a single user. `CTX` is now the native 262,144 (issue #30);
+lowering `GPU_MEM` to ~0.72 as well would trade unused KV for page cache. Untested here - and check
 it against the 2x KV finding above first: 0.72 would cut the 19.5 GiB KV pool
 roughly in half, and if usage really is ~2x the token count, the remainder could
 not hold even one full 262k-token request.

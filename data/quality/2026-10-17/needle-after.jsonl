@@ -1,0 +1,3 @@
+{"depth": 0.1, "status": 200, "prompt_tokens": 167251, "seconds": 142.3, "found": true, "answer": "VIOLET-4721-HARBOR"}
+{"depth": 0.5, "status": 200, "prompt_tokens": 167251, "seconds": 132.0, "found": true, "answer": "VIOLET-4721-HARBOR"}
+{"depth": 0.9, "status": 200, "prompt_tokens": 167251, "seconds": 66.8, "found": true, "answer": "VIOLET-4721-HARBOR"}

@@ -43,7 +43,16 @@ docker rm -f "$NAME" >/dev/null 2>&1 || true
 # Recipe defaults we keep: MTP=2, prefix caching on, deterministic top-k,
 # reduced draft vocabulary, GPU_MEM=0.80 (0.85 drifted into swap on this box
 # after a day; 0.875 got OOM-killed on a long prefill).
-MODE="$MODE" YARN=1 CTX="${CTX_LEN:-500000}" PORT="$PORT" NAME="$NAME" \
+#
+# Native 262,144-token window, no YaRN (issue #30). vLLM applies YaRN statically -
+# to every request, however short - and the model card advises enabling it only
+# when long context is actually needed. Coding agents here compact at ~140k; in
+# the 10 days before the switch, 9 of 12,351 prompts were over 200k tokens
+# (vllm:request_prompt_tokens histogram). A prompt over 262,144 now gets a 400
+# instead of being served. For a long-context window, set both
+# YARN=1 and CTX_LEN (up to 500000) in this model's llama-swap env; CTX_LEN above
+# 262144 without YARN=1 is refused by vLLM at startup.
+MODE="$MODE" YARN="${YARN:-0}" CTX="${CTX_LEN:-262144}" PORT="$PORT" NAME="$NAME" \
   "$RECIPE/scripts/serve.sh"
 
 # serve.sh sets --restart unless-stopped; llama-swap must be the only thing

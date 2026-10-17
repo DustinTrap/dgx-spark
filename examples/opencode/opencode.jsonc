@@ -7,6 +7,12 @@
 {
   "providers": {
     "llama-swap": {
+      // vLLM streams reasoning in `reasoning`, and OpenCode sends it back on earlier assistant
+      // turns under the same name; the chat template keeps it (preserved thinking, the model
+      // card's default for agents). Pinned so a gateway or client default that switches to
+      // `reasoning_content` cannot silently drop it - one gateway in front of this endpoint
+      // strips that field (issue #30).
+      "compatibility": { "reasoningField": "reasoning" },
       "models": {
         "qwen3.8-flash-next": {
           "variants": [
