@@ -1,0 +1,108 @@
+{"case": "read-one", "mode": "anthropic", "rep": 0, "pass": true, "why": "", "finish": "tool_use", "calls": ["read_file"], "seconds": 3.8}
+{"case": "read-one", "mode": "openai-stream", "rep": 0, "pass": true, "why": "", "finish": "tool_calls", "calls": ["read_file"], "seconds": 4.8}
+{"case": "read-one", "mode": "openai", "rep": 0, "pass": true, "why": "", "finish": "tool_calls", "calls": ["read_file"], "seconds": 4.9}
+{"case": "read-parallel", "mode": "anthropic", "rep": 0, "pass": true, "why": "", "finish": "tool_use", "calls": ["read_file", "read_file", "read_file"], "seconds": 6.0}
+{"case": "read-parallel", "mode": "openai", "rep": 0, "pass": true, "why": "", "finish": "tool_calls", "calls": ["read_file", "read_file", "read_file"], "seconds": 7.3}
+{"case": "read-parallel", "mode": "openai-stream", "rep": 0, "pass": true, "why": "", "finish": "tool_calls", "calls": ["read_file", "read_file", "read_file"], "seconds": 7.3}
+{"case": "bash-tests", "mode": "openai-stream", "rep": 0, "pass": true, "why": "", "finish": "tool_calls", "calls": ["bash"], "seconds": 3.9}
+{"case": "bash-tests", "mode": "openai", "rep": 0, "pass": true, "why": "", "finish": "tool_calls", "calls": ["bash"], "seconds": 4.8}
+{"case": "bash-tests", "mode": "anthropic", "rep": 0, "pass": true, "why": "", "finish": "tool_use", "calls": ["bash"], "seconds": 4.5}
+{"case": "bash-quotes", "mode": "openai", "rep": 0, "pass": true, "why": "", "finish": "tool_calls", "calls": ["bash"], "seconds": 5.1}
+{"case": "bash-quotes", "mode": "openai-stream", "rep": 0, "pass": true, "why": "", "finish": "tool_calls", "calls": ["bash"], "seconds": 5.1}
+{"case": "bash-quotes", "mode": "anthropic", "rep": 0, "pass": true, "why": "", "finish": "tool_use", "calls": ["bash"], "seconds": 5.1}
+{"case": "write-code", "mode": "anthropic", "rep": 0, "pass": true, "why": "", "finish": "tool_use", "calls": ["write_file"], "seconds": 8.2}
+{"case": "write-code", "mode": "openai-stream", "rep": 0, "pass": true, "why": "", "finish": "tool_calls", "calls": ["write_file"], "seconds": 10.4}
+{"case": "edit-exact", "mode": "openai", "rep": 0, "pass": true, "why": "", "finish": "tool_calls", "calls": ["edit_file"], "seconds": 5.8}
+{"case": "write-code", "mode": "openai", "rep": 0, "pass": true, "why": "", "finish": "tool_calls", "calls": ["write_file"], "seconds": 15.8}
+{"case": "edit-exact", "mode": "openai-stream", "rep": 0, "pass": true, "why": "", "finish": "tool_calls", "calls": ["edit_file"], "seconds": 6.4}
+{"case": "edit-exact", "mode": "anthropic", "rep": 0, "pass": true, "why": "", "finish": "tool_use", "calls": ["edit_file"], "seconds": 6.0}
+{"case": "edit-markup", "mode": "openai", "rep": 0, "pass": true, "why": "", "finish": "tool_calls", "calls": ["edit_file"], "seconds": 9.8}
+{"case": "edit-markup", "mode": "openai-stream", "rep": 0, "pass": true, "why": "", "finish": "tool_calls", "calls": ["edit_file"], "seconds": 10.6}
+{"case": "grep-regex", "mode": "openai", "rep": 0, "pass": true, "why": "", "finish": "tool_calls", "calls": ["grep"], "seconds": 7.1}
+{"case": "edit-markup", "mode": "anthropic", "rep": 0, "pass": true, "why": "", "finish": "tool_use", "calls": ["edit_file"], "seconds": 12.2}
+{"case": "grep-regex", "mode": "openai-stream", "rep": 0, "pass": true, "why": "", "finish": "tool_calls", "calls": ["grep"], "seconds": 6.6}
+{"case": "grep-regex", "mode": "anthropic", "rep": 0, "pass": true, "why": "", "finish": "tool_use", "calls": ["grep"], "seconds": 7.6}
+{"case": "nested-issue", "mode": "openai", "rep": 0, "pass": true, "why": "", "finish": "tool_calls", "calls": ["create_issue"], "seconds": 8.9}
+{"case": "nested-issue", "mode": "openai-stream", "rep": 0, "pass": true, "why": "", "finish": "tool_calls", "calls": ["create_issue"], "seconds": 8.9}
+{"case": "no-tool", "mode": "openai", "rep": 0, "pass": true, "why": "", "finish": "stop", "calls": [], "seconds": 3.5}
+{"case": "no-tool", "mode": "openai-stream", "rep": 0, "pass": true, "why": "", "finish": "stop", "calls": [], "seconds": 2.7}
+{"case": "no-tool", "mode": "anthropic", "rep": 0, "pass": true, "why": "", "finish": "end_turn", "calls": [], "seconds": 3.3}
+{"case": "nested-issue", "mode": "anthropic", "rep": 0, "pass": true, "why": "", "finish": "tool_use", "calls": ["create_issue"], "seconds": 11.5}
+{"case": "fenced-marker", "mode": "openai", "rep": 0, "pass": true, "why": "", "finish": "stop", "calls": [], "seconds": 11.4}
+{"case": "after-result", "mode": "openai", "rep": 0, "pass": true, "why": "", "finish": "stop", "calls": [], "seconds": 4.4}
+{"case": "fenced-marker", "mode": "openai-stream", "rep": 0, "pass": true, "why": "", "finish": "stop", "calls": [], "seconds": 13.7}
+{"case": "fenced-marker", "mode": "anthropic", "rep": 0, "pass": true, "why": "", "finish": "end_turn", "calls": [], "seconds": 12.6}
+{"case": "read-one", "mode": "openai", "rep": 1, "pass": true, "why": "", "finish": "tool_calls", "calls": ["read_file"], "seconds": 3.2}
+{"case": "after-result", "mode": "openai-stream", "rep": 0, "pass": true, "why": "", "finish": "stop", "calls": [], "seconds": 6.3}
+{"case": "after-result", "mode": "anthropic", "rep": 0, "pass": true, "why": "", "finish": "end_turn", "calls": [], "seconds": 5.6}
+{"case": "read-one", "mode": "openai-stream", "rep": 1, "pass": true, "why": "", "finish": "tool_calls", "calls": ["read_file"], "seconds": 4.2}
+{"case": "read-one", "mode": "anthropic", "rep": 1, "pass": true, "why": "", "finish": "tool_use", "calls": ["read_file"], "seconds": 4.5}
+{"case": "read-parallel", "mode": "openai", "rep": 1, "pass": true, "why": "", "finish": "tool_calls", "calls": ["read_file", "read_file", "read_file"], "seconds": 7.6}
+{"case": "read-parallel", "mode": "openai-stream", "rep": 1, "pass": true, "why": "", "finish": "tool_calls", "calls": ["read_file", "read_file", "read_file"], "seconds": 7.6}
+{"case": "bash-tests", "mode": "openai", "rep": 1, "pass": true, "why": "", "finish": "tool_calls", "calls": ["bash"], "seconds": 4.2}
+{"case": "read-parallel", "mode": "anthropic", "rep": 1, "pass": true, "why": "", "finish": "tool_use", "calls": ["read_file", "read_file", "read_file"], "seconds": 9.0}
+{"case": "bash-tests", "mode": "anthropic", "rep": 1, "pass": true, "why": "", "finish": "tool_use", "calls": ["bash"], "seconds": 4.5}
+{"case": "bash-quotes", "mode": "openai", "rep": 1, "pass": true, "why": "", "finish": "tool_calls", "calls": ["bash"], "seconds": 4.5}
+{"case": "bash-quotes", "mode": "openai-stream", "rep": 1, "pass": true, "why": "", "finish": "tool_calls", "calls": ["bash"], "seconds": 4.6}
+{"case": "bash-quotes", "mode": "anthropic", "rep": 1, "pass": true, "why": "", "finish": "tool_use", "calls": ["bash"], "seconds": 4.6}
+{"case": "bash-tests", "mode": "openai-stream", "rep": 1, "pass": true, "why": "", "finish": "tool_calls", "calls": ["bash"], "seconds": 18.6}
+{"case": "write-code", "mode": "openai", "rep": 1, "pass": true, "why": "", "finish": "tool_calls", "calls": ["write_file"], "seconds": 9.7}
+{"case": "write-code", "mode": "openai-stream", "rep": 1, "pass": true, "why": "", "finish": "tool_calls", "calls": ["write_file"], "seconds": 16.3}
+{"case": "edit-exact", "mode": "openai", "rep": 1, "pass": false, "why": "tool bash, expected edit_file", "finish": "tool_calls", "calls": ["bash"], "seconds": 12.2}
+{"case": "edit-exact", "mode": "openai-stream", "rep": 1, "pass": true, "why": "", "finish": "tool_calls", "calls": ["edit_file"], "seconds": 6.7}
+{"case": "edit-exact", "mode": "anthropic", "rep": 1, "pass": true, "why": "", "finish": "tool_use", "calls": ["edit_file"], "seconds": 5.1}
+{"case": "write-code", "mode": "anthropic", "rep": 1, "pass": true, "why": "", "finish": "tool_use", "calls": ["write_file"], "seconds": 20.5}
+{"case": "edit-markup", "mode": "openai", "rep": 1, "pass": true, "why": "", "finish": "tool_calls", "calls": ["edit_file"], "seconds": 11.2}
+{"case": "edit-markup", "mode": "openai-stream", "rep": 1, "pass": true, "why": "", "finish": "tool_calls", "calls": ["edit_file"], "seconds": 11.9}
+{"case": "grep-regex", "mode": "openai", "rep": 1, "pass": true, "why": "", "finish": "tool_calls", "calls": ["grep"], "seconds": 6.3}
+{"case": "edit-markup", "mode": "anthropic", "rep": 1, "pass": true, "why": "", "finish": "tool_use", "calls": ["edit_file"], "seconds": 14.5}
+{"case": "grep-regex", "mode": "openai-stream", "rep": 1, "pass": true, "why": "", "finish": "tool_calls", "calls": ["grep"], "seconds": 9.1}
+{"case": "grep-regex", "mode": "anthropic", "rep": 1, "pass": true, "why": "", "finish": "tool_use", "calls": ["grep"], "seconds": 7.2}
+{"case": "nested-issue", "mode": "openai", "rep": 1, "pass": true, "why": "", "finish": "tool_calls", "calls": ["create_issue"], "seconds": 8.9}
+{"case": "nested-issue", "mode": "openai-stream", "rep": 1, "pass": true, "why": "", "finish": "tool_calls", "calls": ["create_issue"], "seconds": 9.8}
+{"case": "nested-issue", "mode": "anthropic", "rep": 1, "pass": true, "why": "", "finish": "tool_use", "calls": ["create_issue"], "seconds": 8.8}
+{"case": "no-tool", "mode": "openai", "rep": 1, "pass": true, "why": "", "finish": "stop", "calls": [], "seconds": 7.1}
+{"case": "no-tool", "mode": "openai-stream", "rep": 1, "pass": true, "why": "", "finish": "stop", "calls": [], "seconds": 3.4}
+{"case": "no-tool", "mode": "anthropic", "rep": 1, "pass": true, "why": "", "finish": "end_turn", "calls": [], "seconds": 4.4}
+{"case": "fenced-marker", "mode": "openai", "rep": 1, "pass": true, "why": "", "finish": "stop", "calls": [], "seconds": 11.9}
+{"case": "fenced-marker", "mode": "anthropic", "rep": 1, "pass": true, "why": "", "finish": "end_turn", "calls": [], "seconds": 9.0}
+{"case": "fenced-marker", "mode": "openai-stream", "rep": 1, "pass": true, "why": "", "finish": "stop", "calls": [], "seconds": 12.1}
+{"case": "after-result", "mode": "openai-stream", "rep": 1, "pass": true, "why": "", "finish": "stop", "calls": [], "seconds": 5.6}
+{"case": "after-result", "mode": "anthropic", "rep": 1, "pass": true, "why": "", "finish": "end_turn", "calls": [], "seconds": 4.5}
+{"case": "read-one", "mode": "openai", "rep": 2, "pass": true, "why": "", "finish": "tool_calls", "calls": ["read_file"], "seconds": 3.6}
+{"case": "after-result", "mode": "openai", "rep": 1, "pass": true, "why": "", "finish": "stop", "calls": [], "seconds": 10.0}
+{"case": "read-one", "mode": "openai-stream", "rep": 2, "pass": true, "why": "", "finish": "tool_calls", "calls": ["read_file"], "seconds": 3.7}
+{"case": "read-one", "mode": "anthropic", "rep": 2, "pass": true, "why": "", "finish": "tool_use", "calls": ["read_file"], "seconds": 4.4}
+{"case": "read-parallel", "mode": "openai", "rep": 2, "pass": true, "why": "", "finish": "tool_calls", "calls": ["read_file", "read_file", "read_file"], "seconds": 7.7}
+{"case": "read-parallel", "mode": "openai-stream", "rep": 2, "pass": true, "why": "", "finish": "tool_calls", "calls": ["read_file", "read_file", "read_file"], "seconds": 8.2}
+{"case": "read-parallel", "mode": "anthropic", "rep": 2, "pass": true, "why": "", "finish": "tool_use", "calls": ["read_file", "read_file", "read_file"], "seconds": 7.6}
+{"case": "bash-tests", "mode": "openai-stream", "rep": 2, "pass": true, "why": "", "finish": "tool_calls", "calls": ["bash"], "seconds": 3.7}
+{"case": "bash-tests", "mode": "openai", "rep": 2, "pass": true, "why": "", "finish": "tool_calls", "calls": ["bash"], "seconds": 4.5}
+{"case": "bash-tests", "mode": "anthropic", "rep": 2, "pass": true, "why": "", "finish": "tool_use", "calls": ["bash"], "seconds": 4.5}
+{"case": "bash-quotes", "mode": "openai", "rep": 2, "pass": true, "why": "", "finish": "tool_calls", "calls": ["bash"], "seconds": 4.9}
+{"case": "bash-quotes", "mode": "openai-stream", "rep": 2, "pass": true, "why": "", "finish": "tool_calls", "calls": ["bash"], "seconds": 4.9}
+{"case": "bash-quotes", "mode": "anthropic", "rep": 2, "pass": true, "why": "", "finish": "tool_use", "calls": ["bash"], "seconds": 4.8}
+{"case": "write-code", "mode": "openai-stream", "rep": 2, "pass": true, "why": "", "finish": "tool_calls", "calls": ["write_file"], "seconds": 7.9}
+{"case": "write-code", "mode": "openai", "rep": 2, "pass": true, "why": "", "finish": "tool_calls", "calls": ["write_file"], "seconds": 9.6}
+{"case": "write-code", "mode": "anthropic", "rep": 2, "pass": true, "why": "", "finish": "tool_use", "calls": ["write_file"], "seconds": 9.4}
+{"case": "edit-exact", "mode": "openai-stream", "rep": 2, "pass": true, "why": "", "finish": "tool_calls", "calls": ["edit_file"], "seconds": 5.6}
+{"case": "edit-exact", "mode": "anthropic", "rep": 2, "pass": true, "why": "", "finish": "tool_use", "calls": ["edit_file"], "seconds": 5.0}
+{"case": "edit-exact", "mode": "openai", "rep": 2, "pass": true, "why": "", "finish": "tool_calls", "calls": ["edit_file"], "seconds": 11.1}
+{"case": "edit-markup", "mode": "openai", "rep": 2, "pass": true, "why": "", "finish": "tool_calls", "calls": ["edit_file"], "seconds": 10.3}
+{"case": "edit-markup", "mode": "anthropic", "rep": 2, "pass": true, "why": "", "finish": "tool_use", "calls": ["edit_file"], "seconds": 7.2}
+{"case": "edit-markup", "mode": "openai-stream", "rep": 2, "pass": true, "why": "", "finish": "tool_calls", "calls": ["edit_file"], "seconds": 9.5}
+{"case": "grep-regex", "mode": "openai", "rep": 2, "pass": true, "why": "", "finish": "tool_calls", "calls": ["grep"], "seconds": 8.5}
+{"case": "grep-regex", "mode": "anthropic", "rep": 2, "pass": true, "why": "", "finish": "tool_use", "calls": ["grep"], "seconds": 7.8}
+{"case": "grep-regex", "mode": "openai-stream", "rep": 2, "pass": true, "why": "", "finish": "tool_calls", "calls": ["grep"], "seconds": 11.8}
+{"case": "nested-issue", "mode": "openai", "rep": 2, "pass": true, "why": "", "finish": "tool_calls", "calls": ["create_issue"], "seconds": 10.4}
+{"case": "nested-issue", "mode": "openai-stream", "rep": 2, "pass": true, "why": "", "finish": "tool_calls", "calls": ["create_issue"], "seconds": 11.8}
+{"case": "no-tool", "mode": "openai", "rep": 2, "pass": true, "why": "", "finish": "stop", "calls": [], "seconds": 8.0}
+{"case": "no-tool", "mode": "openai-stream", "rep": 2, "pass": true, "why": "", "finish": "stop", "calls": [], "seconds": 6.2}
+{"case": "nested-issue", "mode": "anthropic", "rep": 2, "pass": true, "why": "", "finish": "tool_use", "calls": ["create_issue"], "seconds": 15.8}
+{"case": "no-tool", "mode": "anthropic", "rep": 2, "pass": true, "why": "", "finish": "end_turn", "calls": [], "seconds": 4.7}
+{"case": "fenced-marker", "mode": "openai", "rep": 2, "pass": true, "why": "", "finish": "stop", "calls": [], "seconds": 10.5}
+{"case": "fenced-marker", "mode": "openai-stream", "rep": 2, "pass": true, "why": "", "finish": "stop", "calls": [], "seconds": 11.3}
+{"case": "fenced-marker", "mode": "anthropic", "rep": 2, "pass": true, "why": "", "finish": "end_turn", "calls": [], "seconds": 9.1}
+{"case": "after-result", "mode": "openai", "rep": 2, "pass": true, "why": "", "finish": "stop", "calls": [], "seconds": 4.0}
+{"case": "after-result", "mode": "openai-stream", "rep": 2, "pass": true, "why": "", "finish": "stop", "calls": [], "seconds": 3.8}
+{"case": "after-result", "mode": "anthropic", "rep": 2, "pass": true, "why": "", "finish": "end_turn", "calls": [], "seconds": 4.3}

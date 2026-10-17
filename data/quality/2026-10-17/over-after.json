@@ -1,0 +1,1 @@
+{"over": 340000, "status": 400, "seconds": 1.8, "body": "{\"error\":{\"message\":\"This model's maximum context length is 262144 tokens. However, you requested 64 output tokens and your prompt contains at least 262081 input tokens, for a total of at least 262145"}
