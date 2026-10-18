@@ -386,7 +386,7 @@ without touching the others. Names only — values live in
 | `sandbox-agent` | agent sandboxes running on this box | `LLM_KEY_SANDBOX_AGENT` |
 | `webui` | the Open WebUI container on this box | `LLM_KEY_WEBUI` |
 | `legacy` | the original shared key — **transitional**: kept valid at cutover so no consumer broke; remove at a later planned reload | `LLM_API_KEY` |
-| `standby` | **nobody** — a pre-issued spare, see below | `LLM_KEY_STANDBY` |
+| `standby` | **taken 2026-10-17** by `ci-review`, a merge-request review job in a self-hosted CI on the LAN; it gets its own variable and a fresh standby is issued at the next planned reload (issue #32) | `LLM_KEY_STANDBY` |
 
 One key per host, never one per class shared across hosts. The variable is the
 name upper-cased with `-` → `_`. Adding a host means one new variable in the
@@ -445,6 +445,11 @@ come back. On this box each of those two edits is a full reload.
 **The standby key is what keeps a rotation to one reload instead of two.** It is
 already accepted by llama-swap but deployed nowhere, so "add the new key" has
 been done ahead of time and moving a consumer onto it restarts nothing.
+
+> **Since 2026-10-17 there is no spare** (issue #32): the standby value is in use by
+> `ci-review` until the next planned reload issues a fresh one. Until then step 1 below
+> is not done, so a rotation costs two reloads, or one with that consumer down until
+> it has its new key.
 
 #### Routine rotation of one consumer
 
