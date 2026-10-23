@@ -14,6 +14,14 @@ NAME=open-webui
 # appears on a command line, i.e. not in the process list or shell history.
 export OPENAI_API_KEY="$LLM_KEY_WEBUI"
 
+# Second connection: the LiteLLM gateway on the lab cluster (README -> Open WebUI). It is
+# HTTPS with the lab's own certificate, and Open WebUI's CA setting REPLACES the default
+# bundle, so the mounted file must be the container's public CAs plus that certificate.
+# Rebuild it when the ingress certificate rotates; until then the gateway connection
+# fails TLS and the picker silently loses its models.
+BUNDLE="$HOME/ai-stack/certs/sno-lab-bundle.pem"
+[ -s "$BUNDLE" ] || { echo "missing $BUNDLE - build it first (README -> Open WebUI -> LiteLLM gateway)" >&2; exit 1; }
+
 docker rm -f "$NAME" >/dev/null 2>&1 || true
 
 docker run -d --name "$NAME" \
@@ -24,6 +32,8 @@ docker run -d --name "$NAME" \
   --env "OPENAI_API_BASE_URL=http://host.docker.internal:9292/v1" \
   --env OPENAI_API_KEY \
   --env "ENABLE_OLLAMA_API=false" \
+  --env "AIOHTTP_CLIENT_SSL_CERT_FILE=/etc/ssl/sno-lab-bundle.pem" \
+  -v "$HOME/ai-stack/certs/sno-lab-bundle.pem:/etc/ssl/sno-lab-bundle.pem:ro" \
   --env "ENABLE_TAGS_GENERATION=false" \
   --env "WEBUI_NAME=Spark" \
   ghcr.io/open-webui/open-webui:main
