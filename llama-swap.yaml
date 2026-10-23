@@ -32,6 +32,8 @@ includeAliasesInList: true
 #   agent-<host>      coding agents on one operator workstation
 #   dashboard-<host>  one always-on dashboard / kiosk client
 #   webui             the Open WebUI container on this box
+#   gateway           an API gateway in front of this endpoint (issue #27); its own
+#                     clients hold the gateway's keys, never one of these
 # The variable is the name upper-cased with "-" as "_" and an LLM_KEY_ prefix:
 #   agent-host1 -> LLM_KEY_AGENT_HOST1. One line per consumer; add a line (and
 #   a variable) per extra host rather than sharing a key between hosts.
@@ -60,6 +62,7 @@ apiKeys:
   - "${env.LLM_KEY_CLUSTER_ASSISTANT}"
   - "${env.LLM_KEY_SANDBOX_AGENT}"
   - "${env.LLM_KEY_WEBUI}"
+  - "${env.LLM_KEY_GATEWAY}"
   - "${env.LLM_KEY_STANDBY}"
 
 models:

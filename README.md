@@ -385,6 +385,7 @@ without touching the others. Names only — values live in
 | `cluster-assistant` | an assistant service running in a cluster | `LLM_KEY_CLUSTER_ASSISTANT` |
 | `sandbox-agent` | agent sandboxes running on this box | `LLM_KEY_SANDBOX_AGENT` |
 | `webui` | the Open WebUI container on this box | `LLM_KEY_WEBUI` |
+| `gateway` | an API gateway in front of this endpoint (#27); its own clients hold keys the gateway issues, never this one | `LLM_KEY_GATEWAY` |
 | `legacy` | the original shared key — **transitional**: kept valid at cutover so no consumer broke; remove at a later planned reload | `LLM_API_KEY` |
 | `standby` | **taken 2026-10-17** by `ci-review`, a merge-request review job in a self-hosted CI on the LAN; it gets its own variable and a fresh standby is issued at the next planned reload (issue #32) | `LLM_KEY_STANDBY` |
 
