@@ -575,6 +575,24 @@ check from inside the container that the persisted key gets 200 on `/v1/models` 
 gets 401. All six model ids are visible in the UI's picker; to restrict it to `-chat`, set a
 model allow-list on the connection under Admin -> Settings -> Connections.
 
+**Upgrading.** `bin/run-openwebui.sh` pins a release tag (`v0.13.3` since 2026-11-16, #34;
+`/api/version` on the box returned `0.13.3`). An upgrade runs database migrations that the
+older version cannot read back, so copy the data out first, with the container stopped:
+
+```bash
+docker stop open-webui
+docker cp open-webui:/app/backend/data ~/ai-stack/backups/open-webui-<old-version>-<date>/
+docker tag "$(docker inspect open-webui -f '{{.Image}}')" open-webui-rollback:<old-version>
+# edit IMAGE in bin/run-openwebui.sh, then:
+bin/run-openwebui.sh && bin/openwebui-settings.sh    # every setting must print X -> X
+```
+
+Then repeat the key check above (200 with the persisted key, 401 with a wrong one) and the
+SearXNG check below. Undo: remove the container, copy the backup back into the `open-webui`
+volume, set `IMAGE` to the rollback tag and run the script. Only the web UI is down during
+this; llama-swap and the model are not touched. The 0.11.3 -> 0.13.3 upgrade kept all six
+settings and both connections (checked with the commands above, 2026-11-16).
+
 #### Getting to zero-reload key changes (not done)
 
 Both routes move key checking, or the model's lifecycle, away from the process

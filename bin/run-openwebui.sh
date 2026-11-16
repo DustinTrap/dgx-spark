@@ -14,6 +14,11 @@ NAME=open-webui
 # appears on a command line, i.e. not in the process list or shell history.
 export OPENAI_API_KEY="$LLM_KEY_WEBUI"
 
+# Pinned release, not the floating :main tag, so a recreate never changes the
+# version by accident. Upgrades cross database migrations: back up the
+# open-webui volume first (README -> Open WebUI -> Upgrading).
+IMAGE=ghcr.io/open-webui/open-webui:v0.13.3
+
 docker rm -f "$NAME" >/dev/null 2>&1 || true
 
 docker run -d --name "$NAME" \
@@ -26,7 +31,7 @@ docker run -d --name "$NAME" \
   --env "ENABLE_OLLAMA_API=false" \
   --env "ENABLE_TAGS_GENERATION=false" \
   --env "WEBUI_NAME=Spark" \
-  ghcr.io/open-webui/open-webui:main
+  "$IMAGE"
 
 # Second network: reach the add-on containers (SearXNG, bin/run-searxng.sh) by
 # name. It is joined after creation, so the primary network stays the default
